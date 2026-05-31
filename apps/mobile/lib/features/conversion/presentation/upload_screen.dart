@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../app/theme/app_tokens.dart';
 import '../../../app/theme/reconsnap_theme.dart';
+import '../../../app/widgets/app_components.dart';
 import '../../../core/models/bank.dart';
 import 'conversion_controller.dart';
 
@@ -18,29 +20,21 @@ class UploadScreen extends ConsumerWidget {
     final controller = ref.read(conversionControllerProvider.notifier);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Upload statement')),
+      appBar: AppBar(title: const Text('Convert statement')),
       body: SafeArea(
         child: ListView(
-          padding: const EdgeInsets.all(20),
+          padding: AppSpacing.page,
           children: [
+            Text('Choose a bank', style: Theme.of(context).textTheme.titleLarge),
+            const SizedBox(height: AppSpacing.xs),
             Text(
-              'Choose a bank pack',
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.w800,
-                color: ReconSnapColors.ink,
-              ),
+              'Support starts narrow so every template can be validated properly.',
+              style: Theme.of(context).textTheme.bodyMedium,
             ),
-            const SizedBox(height: 8),
-            Text(
-              'MVP support starts narrow so each template can be validated properly.',
-              style: Theme.of(
-                context,
-              ).textTheme.bodyMedium?.copyWith(color: ReconSnapColors.mutedInk),
-            ),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.lg),
             ...launchBanks.map(
               (bank) => Padding(
-                padding: const EdgeInsets.only(bottom: 10),
+                padding: const EdgeInsets.only(bottom: AppSpacing.md),
                 child: _BankOption(
                   bank: bank,
                   selected: state.selectedBank.id == bank.id,
@@ -48,69 +42,69 @@ class UploadScreen extends ConsumerWidget {
                 ),
               ),
             ),
-            const SizedBox(height: 16),
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(18),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Upload PDF',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w800,
+            const SizedBox(height: AppSpacing.lg),
+            SoftCard(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.picture_as_pdf_rounded,
+                        color: ReconSnapColors.ink700,
                       ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Digital PDFs are parsed locally first. Scanned statements will use OCR later.',
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: ReconSnapColors.mutedInk,
+                      const SizedBox(width: AppSpacing.sm),
+                      Text(
+                        'Upload PDF',
+                        style: Theme.of(context).textTheme.titleMedium,
                       ),
-                    ),
-                    const SizedBox(height: 16),
-                    ElevatedButton.icon(
-                      onPressed: () async {
-                        final result = await FilePicker.pickFiles(
-                          type: FileType.custom,
-                          allowedExtensions: ['pdf'],
-                          withData: true,
-                        );
-                        final file = result?.files.single;
-                        final bytes = file?.bytes;
-                        if (file == null || bytes == null) return;
-                        await controller.startConversion(
-                          bytes: bytes,
-                          filename: file.name,
-                        );
-                        if (context.mounted) {
-                          context.goNamed('processing');
-                        }
-                      },
-                      icon: const Icon(Icons.folder_open_rounded),
-                      label: const Text('Browse PDF'),
-                    ),
-                    const SizedBox(height: 10),
-                    OutlinedButton.icon(
-                      onPressed: () async {
-                        await controller.startMockConversion();
-                        if (context.mounted) {
-                          context.goNamed('processing');
-                        }
-                      },
-                      icon: const Icon(Icons.auto_awesome_rounded),
-                      label: const Text('Run demo conversion'),
-                    ),
-                  ],
-                ),
+                    ],
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                  Text(
+                    'Digital PDFs are supported today. Scanned statements will use OCR in a later release.',
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
+                  const SizedBox(height: AppSpacing.lg),
+                  ElevatedButton.icon(
+                    onPressed: () => _browse(context, controller),
+                    icon: const Icon(Icons.folder_open_rounded),
+                    label: const Text('Browse PDF'),
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                  OutlinedButton.icon(
+                    onPressed: () async {
+                      await controller.startMockConversion();
+                      if (context.mounted) context.goNamed('processing');
+                    },
+                    icon: const Icon(Icons.auto_awesome_rounded),
+                    label: const Text('Run demo conversion'),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: 12),
-            const _PasswordNote(),
+            const SizedBox(height: AppSpacing.md),
+            const _PrivacyNote(),
           ],
         ),
       ),
     );
+  }
+
+  Future<void> _browse(
+    BuildContext context,
+    ConversionController controller,
+  ) async {
+    final result = await FilePicker.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['pdf'],
+      withData: true,
+    );
+    final file = result?.files.single;
+    final bytes = file?.bytes;
+    if (file == null || bytes == null) return;
+    await controller.startConversion(bytes: bytes, filename: file.name);
+    if (context.mounted) context.goNamed('processing');
   }
 }
 
@@ -127,55 +121,89 @@ class _BankOption extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final label = switch (bank.supportLevel) {
-      BankSupportLevel.templateReady => 'Template ready',
-      BankSupportLevel.beta => 'Beta template',
-      BankSupportLevel.requested => 'Requested',
+    final (label, tone) = switch (bank.supportLevel) {
+      BankSupportLevel.templateReady => ('Template ready', PillTone.success),
+      BankSupportLevel.beta => ('Beta template', PillTone.info),
+      BankSupportLevel.requested => ('Requested', PillTone.neutral),
     };
 
-    return Card(
-      child: ListTile(
-        onTap: onTap,
-        leading: Icon(
-          selected ? Icons.radio_button_checked : Icons.radio_button_off,
-          color: selected
-              ? ReconSnapColors.accentGreen
-              : ReconSnapColors.mutedInk,
+    return Container(
+      decoration: BoxDecoration(
+        color: ReconSnapColors.card,
+        borderRadius: AppRadius.all(AppRadius.lg),
+        border: Border.all(
+          color: selected ? ReconSnapColors.ink : ReconSnapColors.border,
+          width: selected ? 1.6 : 1,
         ),
-        title: Text(bank.name),
-        subtitle: Text('${bank.countryCode} - $label'),
-        trailing: const Icon(Icons.account_balance_rounded),
+        boxShadow: selected ? AppShadows.card : null,
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: AppRadius.all(AppRadius.lg),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpacing.lg),
+            child: Row(
+              children: [
+                Icon(
+                  selected
+                      ? Icons.radio_button_checked_rounded
+                      : Icons.radio_button_off_rounded,
+                  color: selected
+                      ? ReconSnapColors.accentGreen
+                      : ReconSnapColors.ink400,
+                ),
+                const SizedBox(width: AppSpacing.md),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        bank.name,
+                        style: Theme.of(context).textTheme.titleSmall,
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        bank.countryCode,
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    ],
+                  ),
+                ),
+                StatusPill(label: label, tone: tone),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
 }
 
-class _PasswordNote extends StatelessWidget {
-  const _PasswordNote();
+class _PrivacyNote extends StatelessWidget {
+  const _PrivacyNote();
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Icon(
-              Icons.lock_outline_rounded,
-              color: ReconSnapColors.actionBlue,
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      decoration: BoxDecoration(
+        color: ReconSnapColors.subtle,
+        borderRadius: AppRadius.all(AppRadius.md),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(Icons.shield_outlined, color: ReconSnapColors.actionBlue),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Text(
+              'Files are sent securely for processing and are not stored. Passwords are used only to unlock the PDF for this conversion.',
+              style: Theme.of(context).textTheme.bodySmall,
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                'Password-protected statement support is part of the parser architecture. The password will be used only to unlock the file for conversion.',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: ReconSnapColors.mutedInk,
-                ),
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
