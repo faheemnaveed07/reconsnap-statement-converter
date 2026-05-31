@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 
+import '../../../app/theme/app_tokens.dart';
 import '../../../app/theme/reconsnap_theme.dart';
+import '../../../app/widgets/app_components.dart';
 import '../../../core/models/validation_report.dart';
 import 'conversion_controller.dart';
 
@@ -22,58 +25,75 @@ class ValidationScreen extends ConsumerWidget {
         child: report == null
             ? const Center(child: Text('No conversion selected.'))
             : ListView(
-                padding: const EdgeInsets.all(20),
+                padding: AppSpacing.page,
                 children: [
                   _StatusCard(report: report),
-                  const SizedBox(height: 14),
+                  const SizedBox(height: AppSpacing.lg),
                   _MetricGrid(report: report),
-                  const SizedBox(height: 14),
-                  Text(
-                    'Review notes',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                  const SizedBox(height: 10),
+                  const SizedBox(height: AppSpacing.xl),
+                  SectionHeader(title: 'Review notes'),
+                  const SizedBox(height: AppSpacing.md),
                   if (report.issues.isEmpty)
-                    const _IssueTile(
+                    const _NoteTile(
                       title: 'No blocking issues',
                       message:
                           'The statement passed the current validation checks.',
-                      severity: ValidationSeverity.pass,
+                      tone: PillTone.success,
                     )
                   else
                     ...report.issues.map(
-                      (issue) => _IssueTile(
+                      (issue) => _NoteTile(
                         title: issue.title,
                         message: issue.message,
-                        severity: issue.severity,
+                        tone: _toneFor(issue.severity),
                       ),
                     ),
-                  const SizedBox(height: 16),
+                  ...state.warnings.map(
+                    (w) => _NoteTile(
+                      title: 'Parser note',
+                      message: w,
+                      tone: PillTone.info,
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.xl),
                   ElevatedButton.icon(
-                    onPressed: () async {
-                      final exporter = ref.read(csvExportServiceProvider);
-                      final file = await exporter.writeCsv(
-                        filename: job!.filename,
-                        transactions: state.transactions,
-                      );
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text('CSV exported to ${file.path}'),
-                          ),
-                        );
-                      }
-                    },
+                    onPressed: () => _exportCsv(context, ref),
                     icon: const Icon(Icons.download_rounded),
                     label: const Text('Export CSV'),
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                  OutlinedButton.icon(
+                    onPressed: null,
+                    icon: const Icon(Icons.grid_on_rounded),
+                    label: const Text('Export XLSX (coming soon)'),
                   ),
                 ],
               ),
       ),
     );
   }
+
+  Future<void> _exportCsv(BuildContext context, WidgetRef ref) async {
+    final state = ref.read(conversionControllerProvider);
+    final job = state.activeJob;
+    if (job == null) return;
+    final exporter = ref.read(csvExportServiceProvider);
+    final file = await exporter.writeCsv(
+      filename: job.filename,
+      transactions: state.transactions,
+    );
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('CSV exported to ${file.path}')),
+      );
+    }
+  }
+
+  static PillTone _toneFor(ValidationSeverity s) => switch (s) {
+        ValidationSeverity.pass => PillTone.success,
+        ValidationSeverity.warning => PillTone.warning,
+        ValidationSeverity.fail => PillTone.danger,
+      };
 }
 
 class _StatusCard extends StatelessWidget {
@@ -84,47 +104,55 @@ class _StatusCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final passed = report.isPassed;
-    final color = passed
-        ? ReconSnapColors.accentGreen
-        : ReconSnapColors.riskRed;
+    final fg = passed ? ReconSnapColors.accentGreenDark : ReconSnapColors.riskRed;
+    final bg = passed ? ReconSnapColors.successSurface : ReconSnapColors.riskSurface;
 
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Row(
-          children: [
-            CircleAvatar(
-              backgroundColor: color.withValues(alpha: 0.12),
-              child: Icon(
-                passed ? Icons.verified_rounded : Icons.warning_rounded,
-                color: color,
-              ),
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.xl),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: AppRadius.all(AppRadius.lg),
+        border: Border.all(color: fg.withValues(alpha: 0.18)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: AppRadius.all(AppRadius.md),
             ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    passed ? 'Ready for export' : 'Needs review',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    passed
-                        ? 'No blocking balance issues were found.'
-                        : 'Fix the highlighted issues before sending this to accounting software.',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: ReconSnapColors.mutedInk,
-                    ),
-                  ),
-                ],
-              ),
+            child: Icon(
+              passed ? Icons.verified_rounded : Icons.warning_amber_rounded,
+              color: fg,
             ),
-          ],
-        ),
+          ),
+          const SizedBox(width: AppSpacing.lg),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  passed ? 'Ready for export' : 'Needs review',
+                  style: Theme.of(context)
+                      .textTheme
+                      .titleMedium
+                      ?.copyWith(color: fg),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  passed
+                      ? 'No blocking balance issues were found.'
+                      : 'Fix the highlighted issues before sending to accounting software.',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: fg.withValues(alpha: 0.85),
+                      ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -141,46 +169,101 @@ class _MetricGrid extends StatelessWidget {
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       crossAxisCount: 2,
-      childAspectRatio: 1.45,
-      crossAxisSpacing: 10,
-      mainAxisSpacing: 10,
+      childAspectRatio: 1.7,
+      crossAxisSpacing: AppSpacing.md,
+      mainAxisSpacing: AppSpacing.md,
       children: [
-        _MetricCard(label: 'Opening', value: _amount(report.openingBalance)),
-        _MetricCard(label: 'Closing', value: _amount(report.closingBalance)),
-        _MetricCard(label: 'Debits', value: _amount(report.totalDebits)),
-        _MetricCard(label: 'Credits', value: _amount(report.totalCredits)),
+        _MetricCard(label: 'Opening balance', value: _amount(report.openingBalance)),
+        _MetricCard(label: 'Closing balance', value: _amount(report.closingBalance)),
+        _MetricCard(label: 'Total debits', value: _amount(report.totalDebits), tone: PillTone.danger),
+        _MetricCard(label: 'Total credits', value: _amount(report.totalCredits), tone: PillTone.success),
       ],
     );
   }
 }
 
 class _MetricCard extends StatelessWidget {
-  const _MetricCard({required this.label, required this.value});
+  const _MetricCard({required this.label, required this.value, this.tone});
 
   final String label;
   final String value;
+  final PillTone? tone;
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(14),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              label,
-              style: Theme.of(
-                context,
-              ).textTheme.bodySmall?.copyWith(color: ReconSnapColors.mutedInk),
-            ),
-            const SizedBox(height: 6),
-            Text(
+    final accent = switch (tone) {
+      PillTone.success => ReconSnapColors.accentGreenDark,
+      PillTone.danger => ReconSnapColors.riskRed,
+      _ => ReconSnapColors.ink900,
+    };
+    return SoftCard(
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(label, style: Theme.of(context).textTheme.bodySmall),
+          const SizedBox(height: AppSpacing.sm),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
               value,
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w900,
-                color: ReconSnapColors.ink,
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    color: accent,
+                    fontWeight: FontWeight.w900,
+                  ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _NoteTile extends StatelessWidget {
+  const _NoteTile({
+    required this.title,
+    required this.message,
+    required this.tone,
+  });
+
+  final String title;
+  final String message;
+  final PillTone tone;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = switch (tone) {
+      PillTone.success => ReconSnapColors.accentGreenDark,
+      PillTone.warning => ReconSnapColors.warningAmber,
+      PillTone.danger => ReconSnapColors.riskRed,
+      PillTone.info => ReconSnapColors.actionBlue,
+      PillTone.neutral => ReconSnapColors.mutedInk,
+    };
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.md),
+      child: SoftCard(
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              margin: const EdgeInsets.only(top: 3),
+              width: 10,
+              height: 10,
+              decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+            ),
+            const SizedBox(width: AppSpacing.md),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, style: Theme.of(context).textTheme.titleSmall),
+                  const SizedBox(height: 2),
+                  Text(message, style: Theme.of(context).textTheme.bodySmall),
+                ],
               ),
             ),
           ],
@@ -190,39 +273,7 @@ class _MetricCard extends StatelessWidget {
   }
 }
 
-class _IssueTile extends StatelessWidget {
-  const _IssueTile({
-    required this.title,
-    required this.message,
-    required this.severity,
-  });
-
-  final String title;
-  final String message;
-  final ValidationSeverity severity;
-
-  @override
-  Widget build(BuildContext context) {
-    final color = switch (severity) {
-      ValidationSeverity.pass => ReconSnapColors.accentGreen,
-      ValidationSeverity.warning => ReconSnapColors.warningAmber,
-      ValidationSeverity.fail => ReconSnapColors.riskRed,
-    };
-
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: Card(
-        child: ListTile(
-          leading: Icon(Icons.circle_rounded, color: color, size: 14),
-          title: Text(title),
-          subtitle: Text(message),
-        ),
-      ),
-    );
-  }
-}
-
 String _amount(double? value) {
-  if (value == null) return '--';
-  return value.toStringAsFixed(2);
+  if (value == null) return '—';
+  return NumberFormat('#,##0.00').format(value);
 }
