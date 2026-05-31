@@ -69,15 +69,19 @@ class UploadScreen extends ConsumerWidget {
                       ),
                     ),
                     const SizedBox(height: 16),
-                    OutlinedButton.icon(
+                    ElevatedButton.icon(
                       onPressed: () async {
                         final result = await FilePicker.pickFiles(
                           type: FileType.custom,
                           allowedExtensions: ['pdf'],
+                          withData: true,
                         );
-                        final filename = result?.files.single.name;
-                        await controller.startMockConversion(
-                          filename: filename,
+                        final file = result?.files.single;
+                        final bytes = file?.bytes;
+                        if (file == null || bytes == null) return;
+                        await controller.startConversion(
+                          bytes: bytes,
+                          filename: file.name,
                         );
                         if (context.mounted) {
                           context.goNamed('processing');
@@ -87,7 +91,7 @@ class UploadScreen extends ConsumerWidget {
                       label: const Text('Browse PDF'),
                     ),
                     const SizedBox(height: 10),
-                    ElevatedButton.icon(
+                    OutlinedButton.icon(
                       onPressed: () async {
                         await controller.startMockConversion();
                         if (context.mounted) {
