@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 
+import '../../../app/config/app_config.dart';
+import '../../../app/theme/app_tokens.dart';
 import '../../../app/theme/reconsnap_theme.dart';
+import '../../../app/widgets/app_components.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -13,36 +16,70 @@ class SettingsScreen extends StatelessWidget {
       appBar: AppBar(title: const Text('Settings')),
       body: SafeArea(
         child: ListView(
-          padding: const EdgeInsets.all(20),
-          children: const [
-            _SettingsTile(
-              icon: Icons.person_outline_rounded,
-              title: 'Profile',
-              subtitle:
-                  'Auth-ready placeholder for email, Google, and Apple login.',
-            ),
-            SizedBox(height: 10),
-            _SettingsTile(
+          padding: AppSpacing.page,
+          children: [
+            const _ProfileCard(),
+            const SizedBox(height: AppSpacing.xl),
+            SectionHeader(title: 'Account'),
+            const SizedBox(height: AppSpacing.md),
+            const _SettingsTile(
               icon: Icons.credit_card_rounded,
               title: 'Credits and billing',
               subtitle: 'Page allowances and credit packs will live here.',
             ),
-            SizedBox(height: 10),
-            _SettingsTile(
+            const SizedBox(height: AppSpacing.md),
+            const _SettingsTile(
               icon: Icons.lock_outline_rounded,
               title: 'Privacy',
               subtitle:
-                  'No bank credentials. Temporary cloud files only when required.',
+                  'Files are processed and not stored. No bank credentials are ever requested.',
             ),
-            SizedBox(height: 10),
-            _SettingsTile(
+            const SizedBox(height: AppSpacing.md),
+            const _SettingsTile(
               icon: Icons.support_agent_rounded,
               title: 'Request bank support',
-              subtitle:
-                  'Collect unsupported-bank demand and sample consent later.',
+              subtitle: 'Tell us which bank to add next.',
+            ),
+            const SizedBox(height: AppSpacing.xl),
+            SectionHeader(title: 'About'),
+            const SizedBox(height: AppSpacing.md),
+            const _SettingsTile(
+              icon: Icons.dns_rounded,
+              title: 'Conversion service',
+              subtitle: AppConfig.apiBaseUrl,
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _ProfileCard extends StatelessWidget {
+  const _ProfileCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return SoftCard(
+      child: Row(
+        children: [
+          const BrandMark(size: 48),
+          const SizedBox(width: AppSpacing.lg),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Guest', style: Theme.of(context).textTheme.titleMedium),
+                const SizedBox(height: 2),
+                Text(
+                  'Sign in with email, Google, or Apple — coming soon.',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              ],
+            ),
+          ),
+          const StatusPill(label: 'Preview', tone: PillTone.info),
+        ],
       ),
     );
   }
@@ -61,12 +98,36 @@ class _SettingsTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      child: ListTile(
-        leading: Icon(icon, color: ReconSnapColors.ink),
-        title: Text(title),
-        subtitle: Text(subtitle),
-        trailing: const Icon(Icons.chevron_right_rounded),
+    return SoftCard(
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      child: Row(
+        children: [
+          Container(
+            width: 42,
+            height: 42,
+            decoration: BoxDecoration(
+              color: ReconSnapColors.subtle,
+              borderRadius: AppRadius.all(AppRadius.sm),
+            ),
+            child: Icon(icon, color: ReconSnapColors.ink700, size: 20),
+          ),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: Theme.of(context).textTheme.titleSmall),
+                const SizedBox(height: 2),
+                Text(
+                  subtitle,
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: AppSpacing.sm),
+          const Icon(Icons.chevron_right_rounded, color: ReconSnapColors.ink400),
+        ],
       ),
     );
   }
