@@ -25,3 +25,6 @@ research/open-source-references/clones/
 # account data and must never be pushed.
 banks_statements/
 new_bank_statements/
+
+# Accuracy fixtures hold real (anonymised) statements + ground truth — local only.
+apps/mobile/test/fixtures/
