@@ -14,7 +14,8 @@ class ColumnTableConfig {
   const ColumnTableConfig({
     this.columns = defaultColumns,
     this.dayFirst = true,
-    this.footerMarkers = defaultFooterMarkers,
+    this.noiseMarkers = defaultNoiseMarkers,
+    this.maxContinuationLines = 3,
   });
 
   final List<ColumnSpec> columns;
@@ -22,9 +23,16 @@ class ColumnTableConfig {
   /// Day-first date interpretation (UAE/GCC/UK). false for US statements.
   final bool dayFirst;
 
-  /// Lower-case substrings that mark the end of the transaction table, so the
-  /// disclaimer/footer block is not mistaken for rows.
-  final List<String> footerMarkers;
+  /// Lower-case substrings on a non-transaction line (page footers, disclaimers,
+  /// repeated page headers, period banners) that should be *skipped* rather than
+  /// folded into the previous row's description. Crucial for multi-page
+  /// statements, where this boilerplate repeats between transaction blocks.
+  final List<String> noiseMarkers;
+
+  /// A real row's description spans at most a few lines. Capping how many lines
+  /// we append after a date row stops a repeated page-header/account block from
+  /// polluting the previous transaction when markers miss it.
+  final int maxContinuationLines;
 
   static const defaultColumns = <ColumnSpec>[
     ColumnSpec(key: 'date', keywords: ['date']),
@@ -50,12 +58,19 @@ class ColumnTableConfig {
     ColumnSpec(key: 'balance', keywords: ['balance']),
   ];
 
-  static const defaultFooterMarkers = <String>[
+  static const defaultNoiseMarkers = <String>[
     'electronically generated',
     'confirmation of the correctness',
     'computer generated',
-    'closing balance',
-    'page ',
+    'statement of account for the period',
+    'page ', // "Page 2 of 11"
+    'licensed by the central bank',
+    'head office',
+    'registered details',
+    'paid up capital',
+    'commercial registration',
+    'tax registration',
+    'www.',
   ];
 }
 
@@ -132,6 +147,7 @@ class ColumnStatementParser {
   ) {
     final rows = <_RowBuilder>[];
     _RowBuilder? current;
+    var continuation = 0;
 
     for (var i = layout.headerLineIndex + 1; i < doc.lines.length; i++) {
       final line = doc.lines[i];
@@ -148,13 +164,16 @@ class ColumnStatementParser {
           balance: Money.amountIn(layout.cell(line, 'balance')),
           sourceLine: i + 1,
         );
+        continuation = 0;
         continue;
       }
 
-      // A line with no date is either a continuation of the current row's
-      // description or the start of the footer/disclaimer block.
+      // A line with no date is a continuation of the current row's description,
+      // or boilerplate that repeats on page breaks. Skip boilerplate; don't
+      // break, so transactions on later pages are still collected.
       if (current == null) continue;
-      if (config.footerMarkers.any(line.text.toLowerCase().contains)) break;
+      if (_isNoise(line.text.toLowerCase(), config)) continue;
+      if (++continuation > config.maxContinuationLines) continue;
 
       final descText = layout.cell(line, 'description').trim();
       if (descText.isNotEmpty) {
@@ -252,6 +271,14 @@ class ColumnStatementParser {
       openingBalance: opening,
       closingBalance: closing,
     );
+  }
+
+  static bool _isNoise(String lower, ColumnTableConfig config) {
+    if (config.noiseMarkers.any(lower.contains)) return true;
+    // A repeated table header on a page break (Date … Debit/Credit … Balance).
+    return lower.contains('date') &&
+        lower.contains('balance') &&
+        (lower.contains('debit') || lower.contains('credit'));
   }
 
   static String _short(String s) =>
