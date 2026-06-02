@@ -7,12 +7,20 @@ import '../../features/conversion/presentation/processing_screen.dart';
 import '../../features/conversion/presentation/upload_screen.dart';
 import '../../features/conversion/presentation/validation_screen.dart';
 import '../../features/history/presentation/history_screen.dart';
+import '../../features/onboarding/presentation/onboarding_screen.dart';
 import '../../features/settings/presentation/settings_screen.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
+  // Resolved once at startup (see main()); shows onboarding only on first run.
+  final seenOnboarding = ref.watch(onboardingSeenProvider);
   return GoRouter(
-    initialLocation: '/',
+    initialLocation: seenOnboarding ? '/' : '/onboarding',
     routes: [
+      GoRoute(
+        path: '/onboarding',
+        name: OnboardingScreen.routeName,
+        builder: (context, state) => const OnboardingScreen(),
+      ),
       GoRoute(
         path: '/',
         name: HomeScreen.routeName,

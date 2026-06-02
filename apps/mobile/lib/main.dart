@@ -3,9 +3,20 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'app/router/app_router.dart';
 import 'app/theme/reconsnap_theme.dart';
+import 'core/services/first_run_store.dart';
+import 'features/onboarding/presentation/onboarding_screen.dart';
 
-void main() {
-  runApp(const ProviderScope(child: ReconSnapApp()));
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  // Resolve onboarding state before the first frame so the initial route is
+  // correct with no flash of the wrong screen.
+  final seenOnboarding = await FirstRunStore().isSeen();
+  runApp(
+    ProviderScope(
+      overrides: [onboardingSeenProvider.overrideWithValue(seenOnboarding)],
+      child: const ReconSnapApp(),
+    ),
+  );
 }
 
 class ReconSnapApp extends ConsumerWidget {
