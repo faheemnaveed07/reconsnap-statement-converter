@@ -45,7 +45,12 @@ void main() {
       final parser = DigitalPdfStatementParser(extractor: extractor);
 
       final result = await parser.parse(
-        ParseInput(filename: 's.pdf', bank: _bank, bytes: [1, 2, 3], password: 'pw'),
+        ParseInput(
+          filename: 's.pdf',
+          bank: _bank,
+          bytes: [1, 2, 3],
+          password: 'pw',
+        ),
       );
 
       expect(result.transactions, hasLength(2));

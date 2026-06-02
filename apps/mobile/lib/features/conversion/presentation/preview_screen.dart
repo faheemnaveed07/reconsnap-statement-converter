@@ -21,8 +21,9 @@ class PreviewScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(conversionControllerProvider);
     final transactions = state.transactions;
-    final needsReview =
-        transactions.where((t) => t.confidence < _lowConfidence).length;
+    final needsReview = transactions
+        .where((t) => t.confidence < _lowConfidence)
+        .length;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Review rows')),
@@ -30,14 +31,20 @@ class PreviewScreen extends ConsumerWidget {
         child: ListView(
           padding: AppSpacing.page,
           children: [
-            _SummaryCard(job: job, rows: transactions.length, needsReview: needsReview),
+            _SummaryCard(
+              job: job,
+              rows: transactions.length,
+              needsReview: needsReview,
+            ),
             const SizedBox(height: AppSpacing.lg),
             SectionHeader(title: '${transactions.length} transactions'),
             const SizedBox(height: AppSpacing.md),
-            ...transactions.map((row) => Padding(
-                  padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-                  child: _TransactionTile(transaction: row),
-                )),
+            ...transactions.map(
+              (row) => Padding(
+                padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+                child: _TransactionTile(transaction: row),
+              ),
+            ),
             const SizedBox(height: AppSpacing.md),
             ElevatedButton.icon(
               onPressed: () => context.pushNamed('validation'),
@@ -70,7 +77,10 @@ class _SummaryCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Icon(Icons.description_rounded, color: ReconSnapColors.ink700),
+              const Icon(
+                Icons.description_rounded,
+                color: ReconSnapColors.ink700,
+              ),
               const SizedBox(width: AppSpacing.sm),
               Expanded(
                 child: Text(
@@ -104,7 +114,10 @@ class _SummaryCard extends StatelessWidget {
                   tone: PillTone.warning,
                   icon: Icons.flag_rounded,
                 ),
-              const StatusPill(label: 'Tap a row to edit', icon: Icons.edit_note_rounded),
+              const StatusPill(
+                label: 'Tap a row to edit',
+                icon: Icons.edit_note_rounded,
+              ),
             ],
           ),
         ],
@@ -253,7 +266,10 @@ class _EditSheetState extends State<_EditSheet> {
             ),
           ),
           const SizedBox(height: AppSpacing.lg),
-          Text('Edit transaction', style: Theme.of(context).textTheme.titleLarge),
+          Text(
+            'Edit transaction',
+            style: Theme.of(context).textTheme.titleLarge,
+          ),
           const SizedBox(height: AppSpacing.lg),
           TextField(
             controller: _description,
@@ -268,8 +284,16 @@ class _EditSheetState extends State<_EditSheet> {
           const SizedBox(height: AppSpacing.md),
           SegmentedButton<bool>(
             segments: const [
-              ButtonSegment(value: false, label: Text('Debit'), icon: Icon(Icons.south_west_rounded)),
-              ButtonSegment(value: true, label: Text('Credit'), icon: Icon(Icons.north_east_rounded)),
+              ButtonSegment(
+                value: false,
+                label: Text('Debit'),
+                icon: Icon(Icons.south_west_rounded),
+              ),
+              ButtonSegment(
+                value: true,
+                label: Text('Credit'),
+                icon: Icon(Icons.north_east_rounded),
+              ),
             ],
             selected: {_isCredit},
             onSelectionChanged: (s) => setState(() => _isCredit = s.first),

@@ -54,8 +54,10 @@ void main() {
     expect(restored.createdAt, original.createdAt);
     expect(restored.transactions.single, original.transactions.single);
     expect(restored.validationReport.closingBalance, 4879.50);
-    expect(restored.validationReport.issues.single.severity,
-        ValidationSeverity.warning);
+    expect(
+      restored.validationReport.issues.single.severity,
+      ValidationSeverity.warning,
+    );
   });
 
   test('store persists and reloads history from disk', () async {

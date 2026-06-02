@@ -27,15 +27,21 @@ void main() {
     });
 
     test('reads textual dates', () {
-      expect(StatementDate.leading('02 May 2026 Card 5.00')!.date,
-          DateTime(2026, 5, 2));
-      expect(StatementDate.leading('May 2, 2026 Card 5.00')!.date,
-          DateTime(2026, 5, 2));
+      expect(
+        StatementDate.leading('02 May 2026 Card 5.00')!.date,
+        DateTime(2026, 5, 2),
+      );
+      expect(
+        StatementDate.leading('May 2, 2026 Card 5.00')!.date,
+        DateTime(2026, 5, 2),
+      );
     });
 
     test('disambiguates when a component exceeds 12', () {
-      expect(StatementDate.leading('25/12/2026 x 1.00')!.date,
-          DateTime(2026, 12, 25));
+      expect(
+        StatementDate.leading('25/12/2026 x 1.00')!.date,
+        DateTime(2026, 12, 25),
+      );
     });
 
     test('returns null for non-date lines', () {
@@ -66,13 +72,15 @@ Date        Description                 Amount      Balance
           .toList();
       expect(reconciled.length, 3);
 
-      final settlement =
-          reconciled.firstWhere((t) => t.description.contains('Card'));
+      final settlement = reconciled.firstWhere(
+        (t) => t.description.contains('Card'),
+      );
       expect(settlement.debit, closeTo(120.50, 1e-9));
       expect(settlement.credit, isNull);
 
-      final transfer =
-          reconciled.firstWhere((t) => t.description.contains('Blue Palm'));
+      final transfer = reconciled.firstWhere(
+        (t) => t.description.contains('Blue Palm'),
+      );
       expect(transfer.credit, closeTo(2400.0, 1e-9));
       expect(transfer.debit, isNull);
 
@@ -86,8 +94,9 @@ Date        Description                 Amount      Balance
 02/06/2026  Suspicious charge           100.00      850.00
 ''';
       final result = parser.parse(text);
-      final row =
-          result.transactions.firstWhere((t) => t.description == 'Suspicious charge');
+      final row = result.transactions.firstWhere(
+        (t) => t.description == 'Suspicious charge',
+      );
       // It is still recorded, but confidence is reduced so the UI can flag it.
       expect(row.confidence, lessThan(0.8));
     });

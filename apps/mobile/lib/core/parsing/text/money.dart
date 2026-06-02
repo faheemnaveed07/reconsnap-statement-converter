@@ -50,6 +50,29 @@ class Money {
     return sign * value;
   }
 
+  /// Reads the single amount from a column cell (e.g. a Debit/Credit/Balance
+  /// cell). Returns null when the cell holds no amount. When more than one token
+  /// is present (rare column bleed), the one with the most digits wins, so a
+  /// stray fragment doesn't shadow the real figure.
+  static double? amountIn(String cell) {
+    final matches = findAll(cell);
+    if (matches.isEmpty) return null;
+    if (matches.length == 1) return matches.first.value;
+    var best = matches.first;
+    var bestDigits = _digitCount(best.raw);
+    for (final m in matches.skip(1)) {
+      final digits = _digitCount(m.raw);
+      if (digits > bestDigits) {
+        best = m;
+        bestDigits = digits;
+      }
+    }
+    return best.value;
+  }
+
+  static int _digitCount(String s) =>
+      s.replaceAll(RegExp(r'[^0-9]'), '').length;
+
   /// Returns every money token found in [line], in order of appearance.
   static List<({String raw, double value, int start, int end})> findAll(
     String line,

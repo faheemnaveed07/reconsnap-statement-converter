@@ -73,10 +73,12 @@ class HomeScreen extends ConsumerWidget {
             else
               ...state.history
                   .take(4)
-                  .map((job) => Padding(
-                        padding: const EdgeInsets.only(bottom: AppSpacing.md),
-                        child: _HistoryTile(job: job),
-                      )),
+                  .map(
+                    (job) => Padding(
+                      padding: const EdgeInsets.only(bottom: AppSpacing.md),
+                      child: _HistoryTile(job: job),
+                    ),
+                  ),
           ],
         ),
       ),
@@ -196,7 +198,10 @@ class _CreditPanel extends StatelessWidget {
               ],
             ),
           ),
-          const Icon(Icons.chevron_right_rounded, color: ReconSnapColors.ink400),
+          const Icon(
+            Icons.chevron_right_rounded,
+            color: ReconSnapColors.ink400,
+          ),
         ],
       ),
     );

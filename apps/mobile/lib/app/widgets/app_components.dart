@@ -70,7 +70,12 @@ enum PillTone { neutral, success, warning, danger, info }
 
 /// Compact status/label pill with semantic colouring.
 class StatusPill extends StatelessWidget {
-  const StatusPill({super.key, required this.label, this.tone = PillTone.neutral, this.icon});
+  const StatusPill({
+    super.key,
+    required this.label,
+    this.tone = PillTone.neutral,
+    this.icon,
+  });
 
   final String label;
   final PillTone tone;
@@ -79,8 +84,14 @@ class StatusPill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final (fg, bg) = switch (tone) {
-      PillTone.success => (ReconSnapColors.accentGreenDark, ReconSnapColors.successSurface),
-      PillTone.warning => (ReconSnapColors.warningAmber, ReconSnapColors.warningSurface),
+      PillTone.success => (
+        ReconSnapColors.accentGreenDark,
+        ReconSnapColors.successSurface,
+      ),
+      PillTone.warning => (
+        ReconSnapColors.warningAmber,
+        ReconSnapColors.warningSurface,
+      ),
       PillTone.danger => (ReconSnapColors.riskRed, ReconSnapColors.riskSurface),
       PillTone.info => (ReconSnapColors.actionBlue, Color(0xFFEAF1FE)),
       PillTone.neutral => (ReconSnapColors.ink700, ReconSnapColors.subtle),
@@ -128,9 +139,9 @@ class SectionHeader extends StatelessWidget {
         Expanded(
           child: Text(
             title,
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w800,
-            ),
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
           ),
         ),
         ?action,

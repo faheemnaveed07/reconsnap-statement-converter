@@ -29,7 +29,9 @@ class RemotePdfTextExtractor implements StatementTextExtractor {
   }) async {
     final uri = Uri.parse('$baseUrl/extract');
     final request = http.MultipartRequest('POST', uri)
-      ..files.add(http.MultipartFile.fromBytes('file', bytes, filename: filename));
+      ..files.add(
+        http.MultipartFile.fromBytes('file', bytes, filename: filename),
+      );
     if (password != null && password.isNotEmpty) {
       request.fields['password'] = password;
     }
@@ -51,7 +53,10 @@ class RemotePdfTextExtractor implements StatementTextExtractor {
         throw ExtractionException('File is too large (max 25 MB).');
       default:
         throw ExtractionException(
-          _detail(response.body, fallback: 'Conversion failed (${response.statusCode}).'),
+          _detail(
+            response.body,
+            fallback: 'Conversion failed (${response.statusCode}).',
+          ),
         );
     }
   }

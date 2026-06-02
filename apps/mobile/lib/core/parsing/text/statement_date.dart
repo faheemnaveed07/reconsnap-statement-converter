@@ -95,9 +95,7 @@ class StatementDate {
     // If one component is clearly > 12 it must be the day, which disambiguates.
     if (first > 12 && second <= 12) return _build(year, second, first);
     if (second > 12 && first <= 12) return _build(year, first, second);
-    return dayFirst
-        ? _build(year, second, first)
-        : _build(year, first, second);
+    return dayFirst ? _build(year, second, first) : _build(year, first, second);
   }
 
   static int _normaliseYear(int year) {

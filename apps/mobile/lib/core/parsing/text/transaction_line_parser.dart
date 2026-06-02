@@ -195,6 +195,5 @@ class _ResolvedAmount {
 class LineSplitter {
   const LineSplitter();
 
-  List<String> split(String text) =>
-      text.split(RegExp(r'\r\n|\r|\n'));
+  List<String> split(String text) => text.split(RegExp(r'\r\n|\r|\n'));
 }

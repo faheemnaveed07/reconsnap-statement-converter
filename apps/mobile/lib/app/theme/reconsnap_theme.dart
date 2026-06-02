@@ -162,7 +162,10 @@ class ReconSnapTheme {
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: Colors.white,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 16,
+        ),
         labelStyle: const TextStyle(color: ReconSnapColors.mutedInk),
         border: OutlineInputBorder(
           borderRadius: AppRadius.all(AppRadius.md),

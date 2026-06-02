@@ -2,7 +2,14 @@ import 'bank.dart';
 import 'statement_transaction.dart';
 import 'validation_report.dart';
 
-enum ConversionStatus { idle, selecting, processing, needsPassword, ready, failed }
+enum ConversionStatus {
+  idle,
+  selecting,
+  processing,
+  needsPassword,
+  ready,
+  failed,
+}
 
 class ConversionJob {
   const ConversionJob({

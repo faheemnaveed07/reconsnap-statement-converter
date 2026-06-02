@@ -4,10 +4,11 @@ import 'package:uuid/uuid.dart';
 import '../../../core/models/bank.dart';
 import '../../../core/models/conversion_job.dart';
 import '../../../core/models/statement_transaction.dart';
-import '../../../core/parsing/digital_pdf_statement_parser.dart';
 import '../../../core/parsing/mock_statement_parser.dart';
 import '../../../core/parsing/on_device_pdf_text_extractor.dart';
+import '../../../core/parsing/positioned/positioned_pdf_extractor.dart';
 import '../../../core/parsing/statement_parser.dart';
+import '../../../core/parsing/templated_statement_parser.dart';
 import '../../../core/parsing/text/statement_text_extractor.dart';
 import '../../../core/services/conversion_history_store.dart';
 import '../../../core/services/csv_export_service.dart';
@@ -28,17 +29,18 @@ final mockStatementParserProvider = Provider<StatementParser>(
   (ref) => const MockStatementParser(),
 );
 
-/// On-device text extractor — the default. Needs no server and never sends the
-/// PDF off the device. Swap to a [RemotePdfTextExtractor] here if server-side
-/// extraction (e.g. broader layout coverage) is ever needed.
-final statementTextExtractorProvider = Provider<StatementTextExtractor>(
+/// On-device extractor — the default. Provides positioned words for the
+/// column-aware bank templates; needs no server and never sends the PDF off the
+/// device.
+final positionedPdfExtractorProvider = Provider<PositionedPdfExtractor>(
   (ref) => const OnDevicePdfTextExtractor(),
 );
 
-/// Real parser for digital PDFs.
+/// Real parser for digital PDFs: document-type gate → bank-specific column
+/// template (Emirates NBD today) → generic balance-reconciling fallback.
 final digitalStatementParserProvider = Provider<StatementParser>(
-  (ref) => DigitalPdfStatementParser(
-    extractor: ref.watch(statementTextExtractorProvider),
+  (ref) => TemplatedStatementParser(
+    extractor: ref.watch(positionedPdfExtractorProvider),
   ),
 );
 
@@ -192,6 +194,13 @@ class ConversionController extends Notifier<ConversionState> {
       state = state.copyWith(
         status: ConversionStatus.needsPassword,
         errorMessage: null,
+      );
+    } on UnsupportedDocumentException catch (e) {
+      // Not an account statement (annual report, form, unreadable text) — tell
+      // the user why instead of showing a generic failure.
+      state = state.copyWith(
+        status: ConversionStatus.failed,
+        errorMessage: e.message,
       );
     } on OcrNotSupportedException catch (e) {
       state = state.copyWith(

@@ -67,8 +67,10 @@ class _Empty extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: AppSpacing.lg),
-              Text('No saved conversions yet',
-                  style: Theme.of(context).textTheme.titleMedium),
+              Text(
+                'No saved conversions yet',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
               const SizedBox(height: AppSpacing.xs),
               Text(
                 'Convert a statement to see it here with its validation status and exports.',
@@ -105,8 +107,10 @@ class _HistoryTile extends StatelessWidget {
               color: ReconSnapColors.subtle,
               borderRadius: AppRadius.all(AppRadius.sm),
             ),
-            child: const Icon(Icons.description_rounded,
-                color: ReconSnapColors.ink700),
+            child: const Icon(
+              Icons.description_rounded,
+              color: ReconSnapColors.ink700,
+            ),
           ),
           const SizedBox(width: AppSpacing.md),
           Expanded(

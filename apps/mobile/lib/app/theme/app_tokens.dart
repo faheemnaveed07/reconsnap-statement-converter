@@ -36,23 +36,11 @@ class AppShadows {
   const AppShadows._();
 
   static const List<BoxShadow> card = [
-    BoxShadow(
-      color: Color(0x0F101828),
-      blurRadius: 2,
-      offset: Offset(0, 1),
-    ),
-    BoxShadow(
-      color: Color(0x14101828),
-      blurRadius: 16,
-      offset: Offset(0, 8),
-    ),
+    BoxShadow(color: Color(0x0F101828), blurRadius: 2, offset: Offset(0, 1)),
+    BoxShadow(color: Color(0x14101828), blurRadius: 16, offset: Offset(0, 8)),
   ];
 
   static const List<BoxShadow> raised = [
-    BoxShadow(
-      color: Color(0x1A101828),
-      blurRadius: 28,
-      offset: Offset(0, 14),
-    ),
+    BoxShadow(color: Color(0x1A101828), blurRadius: 28, offset: Offset(0, 14)),
   ];
 }

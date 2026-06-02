@@ -25,7 +25,10 @@ class UploadScreen extends ConsumerWidget {
         child: ListView(
           padding: AppSpacing.page,
           children: [
-            Text('Choose a bank', style: Theme.of(context).textTheme.titleLarge),
+            Text(
+              'Choose a bank',
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
             const SizedBox(height: AppSpacing.xs),
             Text(
               'Support starts narrow so every template can be validated properly.',

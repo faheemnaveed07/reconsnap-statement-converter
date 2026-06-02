@@ -118,15 +118,15 @@ class _SettingsTile extends StatelessWidget {
               children: [
                 Text(title, style: Theme.of(context).textTheme.titleSmall),
                 const SizedBox(height: 2),
-                Text(
-                  subtitle,
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
+                Text(subtitle, style: Theme.of(context).textTheme.bodySmall),
               ],
             ),
           ),
           const SizedBox(width: AppSpacing.sm),
-          const Icon(Icons.chevron_right_rounded, color: ReconSnapColors.ink400),
+          const Icon(
+            Icons.chevron_right_rounded,
+            color: ReconSnapColors.ink400,
+          ),
         ],
       ),
     );
