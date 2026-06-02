@@ -11,6 +11,7 @@ import '../../../core/parsing/statement_parser.dart';
 import '../../../core/parsing/templated_statement_parser.dart';
 import '../../../core/parsing/text/statement_text_extractor.dart';
 import '../../../core/services/conversion_history_store.dart';
+import '../../billing/presentation/entitlements_controller.dart';
 import '../../../core/services/csv_export_service.dart';
 import '../../../core/services/xlsx_export_service.dart';
 import '../../../core/validation/validation_engine.dart';
@@ -190,6 +191,8 @@ class ConversionController extends Notifier<ConversionState> {
       }
 
       _completeWith(result, validator, filename);
+      // A successful real conversion spends one credit (the demo is free).
+      ref.read(entitlementsProvider.notifier).consumeOne();
     } on PasswordRequiredException {
       state = state.copyWith(
         status: ConversionStatus.needsPassword,

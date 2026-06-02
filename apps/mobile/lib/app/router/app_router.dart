@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../features/billing/presentation/paywall_screen.dart';
 import '../../features/conversion/presentation/home_screen.dart';
 import '../../features/conversion/presentation/processing_screen.dart';
 import '../../features/conversion/presentation/upload_screen.dart';
@@ -41,6 +42,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: '/settings',
         name: SettingsScreen.routeName,
         builder: (context, state) => const SettingsScreen(),
+      ),
+      GoRoute(
+        path: '/paywall',
+        name: PaywallScreen.routeName,
+        builder: (context, state) => const PaywallScreen(),
       ),
     ],
   );

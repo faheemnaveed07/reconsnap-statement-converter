@@ -7,6 +7,7 @@ import '../../../app/theme/app_tokens.dart';
 import '../../../app/theme/reconsnap_theme.dart';
 import '../../../app/widgets/app_components.dart';
 import '../../../core/models/bank.dart';
+import '../../billing/presentation/entitlements_controller.dart';
 import 'conversion_controller.dart';
 
 class UploadScreen extends ConsumerWidget {
@@ -19,8 +20,29 @@ class UploadScreen extends ConsumerWidget {
     final state = ref.watch(conversionControllerProvider);
     final controller = ref.read(conversionControllerProvider.notifier);
 
+    final entitlements = ref.watch(entitlementsProvider);
+
     return Scaffold(
-      appBar: AppBar(title: const Text('Convert statement')),
+      appBar: AppBar(
+        title: const Text('Convert statement'),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: AppSpacing.md),
+            child: Center(
+              child: GestureDetector(
+                onTap: () => context.pushNamed('paywall'),
+                child: StatusPill(
+                  label: entitlements.isPro
+                      ? 'Pro'
+                      : '${entitlements.availableCredits} credits',
+                  tone: entitlements.isPro ? PillTone.success : PillTone.info,
+                  icon: Icons.bolt_rounded,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
       body: SafeArea(
         child: ListView(
           padding: AppSpacing.page,
@@ -70,7 +92,7 @@ class UploadScreen extends ConsumerWidget {
                   ),
                   const SizedBox(height: AppSpacing.lg),
                   ElevatedButton.icon(
-                    onPressed: () => _browse(context, controller),
+                    onPressed: () => _browse(context, ref),
                     icon: const Icon(Icons.folder_open_rounded),
                     label: const Text('Browse PDF'),
                   ),
@@ -94,10 +116,12 @@ class UploadScreen extends ConsumerWidget {
     );
   }
 
-  Future<void> _browse(
-    BuildContext context,
-    ConversionController controller,
-  ) async {
+  Future<void> _browse(BuildContext context, WidgetRef ref) async {
+    // Gate real conversions on available credits; the demo stays free.
+    if (!ref.read(entitlementsProvider).canConvert) {
+      context.pushNamed('paywall');
+      return;
+    }
     final result = await FilePicker.pickFiles(
       type: FileType.custom,
       allowedExtensions: ['pdf'],
@@ -106,7 +130,9 @@ class UploadScreen extends ConsumerWidget {
     final file = result?.files.single;
     final bytes = file?.bytes;
     if (file == null || bytes == null) return;
-    await controller.startConversion(bytes: bytes, filename: file.name);
+    await ref
+        .read(conversionControllerProvider.notifier)
+        .startConversion(bytes: bytes, filename: file.name);
     if (context.mounted) context.goNamed('processing');
   }
 }

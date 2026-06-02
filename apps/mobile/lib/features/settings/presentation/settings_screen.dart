@@ -1,17 +1,21 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
-import '../../../app/config/app_config.dart';
 import '../../../app/theme/app_tokens.dart';
 import '../../../app/theme/reconsnap_theme.dart';
 import '../../../app/widgets/app_components.dart';
+import '../../billing/presentation/entitlements_controller.dart';
 
-class SettingsScreen extends StatelessWidget {
+class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
 
   static const routeName = 'settings';
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final entitlements = ref.watch(entitlementsProvider);
+
     return Scaffold(
       appBar: AppBar(title: const Text('Settings')),
       body: SafeArea(
@@ -22,17 +26,20 @@ class SettingsScreen extends StatelessWidget {
             const SizedBox(height: AppSpacing.xl),
             SectionHeader(title: 'Account'),
             const SizedBox(height: AppSpacing.md),
-            const _SettingsTile(
-              icon: Icons.credit_card_rounded,
+            _SettingsTile(
+              icon: Icons.bolt_rounded,
               title: 'Credits and billing',
-              subtitle: 'Page allowances and credit packs will live here.',
+              subtitle: entitlements.isPro
+                  ? 'Pro — unlimited conversions'
+                  : '${entitlements.availableCredits} conversions remaining · tap to upgrade',
+              onTap: () => context.pushNamed('paywall'),
             ),
             const SizedBox(height: AppSpacing.md),
             const _SettingsTile(
               icon: Icons.lock_outline_rounded,
               title: 'Privacy',
               subtitle:
-                  'Files are processed and not stored. No bank credentials are ever requested.',
+                  'Statements are processed on your device and never uploaded. No bank credentials are ever requested.',
             ),
             const SizedBox(height: AppSpacing.md),
             const _SettingsTile(
@@ -44,9 +51,9 @@ class SettingsScreen extends StatelessWidget {
             SectionHeader(title: 'About'),
             const SizedBox(height: AppSpacing.md),
             const _SettingsTile(
-              icon: Icons.dns_rounded,
-              title: 'Conversion service',
-              subtitle: AppConfig.apiBaseUrl,
+              icon: Icons.shield_outlined,
+              title: 'Processing',
+              subtitle: 'On your device — works offline, nothing uploaded.',
             ),
           ],
         ),
@@ -90,15 +97,18 @@ class _SettingsTile extends StatelessWidget {
     required this.icon,
     required this.title,
     required this.subtitle,
+    this.onTap,
   });
 
   final IconData icon;
   final String title;
   final String subtitle;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     return SoftCard(
+      onTap: onTap,
       padding: const EdgeInsets.all(AppSpacing.lg),
       child: Row(
         children: [
