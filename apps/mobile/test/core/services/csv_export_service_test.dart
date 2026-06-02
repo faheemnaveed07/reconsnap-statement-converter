@@ -18,4 +18,16 @@ void main() {
     expect(csv, contains('Date,Description,Debit,Credit,Balance,Confidence'));
     expect(csv, contains('2026-05-01,Client payment,,250.00,1250.00,90%'));
   });
+
+  test('derives a clean .csv export name from the source filename', () {
+    expect(
+      CsvExportService.csvFilename('sample_statement.pdf'),
+      'sample_statement.csv',
+    );
+    expect(
+      CsvExportService.csvFilename('Emirates NBD May.PDF'),
+      'Emirates_NBD_May.csv',
+    );
+    expect(CsvExportService.csvFilename(''), 'statement.csv');
+  });
 }

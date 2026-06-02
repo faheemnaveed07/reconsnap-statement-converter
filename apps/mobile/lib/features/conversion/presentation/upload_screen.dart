@@ -199,7 +199,7 @@ class _PrivacyNote extends StatelessWidget {
           const SizedBox(width: AppSpacing.md),
           Expanded(
             child: Text(
-              'Files are sent securely for processing and are not stored. Passwords are used only to unlock the PDF for this conversion.',
+              'Statements are processed entirely on your device and never uploaded. Passwords are used only to unlock the PDF for this conversion.',
               style: Theme.of(context).textTheme.bodySmall,
             ),
           ),

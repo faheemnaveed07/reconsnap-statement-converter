@@ -35,9 +35,20 @@ class CsvExportService {
     required List<StatementTransaction> transactions,
   }) async {
     final directory = await getTemporaryDirectory();
-    final safeName = filename.replaceAll(RegExp(r'[^a-zA-Z0-9_-]'), '_');
-    final file = File('${directory.path}/$safeName.csv');
+    final file = File('${directory.path}/${csvFilename(filename)}');
     return file.writeAsString(buildCsv(transactions));
+  }
+
+  /// Maps a source filename like `sample_statement.pdf` to a clean export name
+  /// like `sample_statement.csv`. The `.pdf` extension is dropped (rather than
+  /// sanitised into `_pdf`) so the shared file reads naturally.
+  static String csvFilename(String source) {
+    final withoutExt = source.replaceAll(
+      RegExp(r'\.pdf$', caseSensitive: false),
+      '',
+    );
+    final safe = withoutExt.replaceAll(RegExp(r'[^a-zA-Z0-9_-]'), '_');
+    return '${safe.isEmpty ? 'statement' : safe}.csv';
   }
 
   String _formatAmount(double? amount) {

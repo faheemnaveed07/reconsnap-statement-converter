@@ -1,32 +1,39 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 
-import '../../../app/config/app_config.dart';
 import '../../../core/models/bank.dart';
 import '../../../core/models/conversion_job.dart';
 import '../../../core/models/statement_transaction.dart';
 import '../../../core/parsing/digital_pdf_statement_parser.dart';
 import '../../../core/parsing/mock_statement_parser.dart';
-import '../../../core/parsing/remote_pdf_text_extractor.dart';
+import '../../../core/parsing/on_device_pdf_text_extractor.dart';
 import '../../../core/parsing/statement_parser.dart';
 import '../../../core/parsing/text/statement_text_extractor.dart';
+import '../../../core/services/conversion_history_store.dart';
 import '../../../core/services/csv_export_service.dart';
+import '../../../core/services/xlsx_export_service.dart';
 import '../../../core/validation/validation_engine.dart';
 
 final validationEngineProvider = Provider((ref) => const ValidationEngine());
 final csvExportServiceProvider = Provider((ref) => CsvExportService());
+final xlsxExportServiceProvider = Provider((ref) => XlsxExportService());
+
+/// Persists conversion history across app restarts.
+final conversionHistoryStoreProvider = Provider(
+  (ref) => ConversionHistoryStore(),
+);
 
 /// Mock parser used by the "Run demo conversion" affordance.
 final mockStatementParserProvider = Provider<StatementParser>(
   (ref) => const MockStatementParser(),
 );
 
-/// Text extractor backed by the ReconSnap API (local dev server by default).
-final statementTextExtractorProvider = Provider<StatementTextExtractor>((ref) {
-  final extractor = RemotePdfTextExtractor(baseUrl: AppConfig.apiBaseUrl);
-  ref.onDispose(extractor.dispose);
-  return extractor;
-});
+/// On-device text extractor — the default. Needs no server and never sends the
+/// PDF off the device. Swap to a [RemotePdfTextExtractor] here if server-side
+/// extraction (e.g. broader layout coverage) is ever needed.
+final statementTextExtractorProvider = Provider<StatementTextExtractor>(
+  (ref) => const OnDevicePdfTextExtractor(),
+);
 
 /// Real parser for digital PDFs.
 final digitalStatementParserProvider = Provider<StatementParser>(
@@ -106,10 +113,41 @@ class ConversionController extends Notifier<ConversionState> {
   static const _uuid = Uuid();
 
   @override
-  ConversionState build() => ConversionState.initial();
+  ConversionState build() {
+    _restoreHistory();
+    return ConversionState.initial();
+  }
+
+  /// Loads persisted history after construction and folds it into state. Runs
+  /// async so app startup is never blocked on disk I/O.
+  Future<void> _restoreHistory() async {
+    final saved = await ref.read(conversionHistoryStoreProvider).load();
+    if (saved.isEmpty) return;
+    // Keep anything converted while the load was in flight ahead of the
+    // restored entries.
+    state = state.copyWith(history: [...state.history, ...saved]);
+  }
+
+  void _persistHistory() {
+    ref.read(conversionHistoryStoreProvider).save(state.history);
+  }
 
   void selectBank(Bank bank) {
     state = state.copyWith(selectedBank: bank);
+  }
+
+  /// Re-opens a past conversion (e.g. tapped in History) as the active job so
+  /// the preview/validation/export screens show it.
+  void openJob(ConversionJob job) {
+    state = state.copyWith(
+      selectedBank: job.bank,
+      status: ConversionStatus.ready,
+      filename: job.filename,
+      transactions: job.transactions,
+      warnings: const [],
+      activeJob: job,
+      errorMessage: null,
+    );
   }
 
   /// Runs a real conversion against the extraction API + digital parser.
@@ -227,6 +265,7 @@ class ConversionController extends Notifier<ConversionState> {
       activeJob: job,
       history: [job, ...state.history],
     );
+    _persistHistory();
   }
 
   void updateTransaction(StatementTransaction updated) {
@@ -238,18 +277,29 @@ class ConversionController extends Notifier<ConversionState> {
     final report = ref.read(validationEngineProvider).validate(transactions);
     final job = state.activeJob;
 
+    if (job == null) {
+      state = state.copyWith(transactions: transactions);
+      return;
+    }
+
+    final updatedJob = ConversionJob(
+      id: job.id,
+      filename: job.filename,
+      bank: job.bank,
+      transactions: transactions,
+      validationReport: report,
+      createdAt: job.createdAt,
+    );
+
     state = state.copyWith(
       transactions: transactions,
-      activeJob: job == null
-          ? null
-          : ConversionJob(
-              id: job.id,
-              filename: job.filename,
-              bank: job.bank,
-              transactions: transactions,
-              validationReport: report,
-              createdAt: job.createdAt,
-            ),
+      activeJob: updatedJob,
+      // Keep the matching history entry in sync with the correction.
+      history: [
+        for (final entry in state.history)
+          entry.id == updatedJob.id ? updatedJob : entry,
+      ],
     );
+    _persistHistory();
   }
 }

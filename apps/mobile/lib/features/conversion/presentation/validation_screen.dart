@@ -1,6 +1,9 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../../../app/theme/app_tokens.dart';
 import '../../../app/theme/reconsnap_theme.dart';
@@ -56,16 +59,20 @@ class ValidationScreen extends ConsumerWidget {
                     ),
                   ),
                   const SizedBox(height: AppSpacing.xl),
-                  ElevatedButton.icon(
-                    onPressed: () => _exportCsv(context, ref),
-                    icon: const Icon(Icons.download_rounded),
-                    label: const Text('Export CSV'),
+                  Builder(
+                    builder: (buttonContext) => ElevatedButton.icon(
+                      onPressed: () => _exportCsv(buttonContext, ref),
+                      icon: const Icon(Icons.ios_share_rounded),
+                      label: const Text('Export CSV'),
+                    ),
                   ),
                   const SizedBox(height: AppSpacing.md),
-                  OutlinedButton.icon(
-                    onPressed: null,
-                    icon: const Icon(Icons.grid_on_rounded),
-                    label: const Text('Export XLSX (coming soon)'),
+                  Builder(
+                    builder: (buttonContext) => OutlinedButton.icon(
+                      onPressed: () => _exportXlsx(buttonContext, ref),
+                      icon: const Icon(Icons.grid_on_rounded),
+                      label: const Text('Export XLSX'),
+                    ),
                   ),
                 ],
               ),
@@ -77,23 +84,72 @@ class ValidationScreen extends ConsumerWidget {
     final state = ref.read(conversionControllerProvider);
     final job = state.activeJob;
     if (job == null) return;
-    final exporter = ref.read(csvExportServiceProvider);
-    final file = await exporter.writeCsv(
-      filename: job.filename,
-      transactions: state.transactions,
-    );
+    final file = await ref
+        .read(csvExportServiceProvider)
+        .writeCsv(filename: job.filename, transactions: state.transactions);
     if (context.mounted) {
+      await _shareFile(
+        context,
+        file,
+        '${job.bank.name} statement (CSV)',
+        'text/csv',
+      );
+    }
+  }
+
+  Future<void> _exportXlsx(BuildContext context, WidgetRef ref) async {
+    final state = ref.read(conversionControllerProvider);
+    final job = state.activeJob;
+    if (job == null) return;
+    final file = await ref
+        .read(xlsxExportServiceProvider)
+        .writeXlsx(filename: job.filename, transactions: state.transactions);
+    if (context.mounted) {
+      await _shareFile(
+        context,
+        file,
+        '${job.bank.name} statement (XLSX)',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      );
+    }
+  }
+
+  /// Hands an exported file to the OS share sheet so the user can save it to
+  /// Files / Drive / Downloads or send it on — the temp path it lives at is not
+  /// reachable on its own. Errors surface as a friendly snackbar.
+  Future<void> _shareFile(
+    BuildContext context,
+    File file,
+    String subject,
+    String mimeType,
+  ) async {
+    try {
+      final box = context.findRenderObject() as RenderBox?;
+      await SharePlus.instance.share(
+        ShareParams(
+          files: [XFile(file.path, mimeType: mimeType)],
+          subject: subject,
+          text: 'Statement converted with ReconSnap.',
+          sharePositionOrigin: box == null
+              ? null
+              : box.localToGlobal(Offset.zero) & box.size,
+        ),
+      );
+    } catch (_) {
+      if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('CSV exported to ${file.path}')),
+        const SnackBar(
+          content: Text('Could not export the file. Please try again.'),
+        ),
       );
     }
   }
 
   static PillTone _toneFor(ValidationSeverity s) => switch (s) {
-        ValidationSeverity.pass => PillTone.success,
-        ValidationSeverity.warning => PillTone.warning,
-        ValidationSeverity.fail => PillTone.danger,
-      };
+    ValidationSeverity.pass => PillTone.success,
+    ValidationSeverity.warning => PillTone.warning,
+    ValidationSeverity.fail => PillTone.danger,
+  };
 }
 
 class _StatusCard extends StatelessWidget {
@@ -104,8 +160,12 @@ class _StatusCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final passed = report.isPassed;
-    final fg = passed ? ReconSnapColors.accentGreenDark : ReconSnapColors.riskRed;
-    final bg = passed ? ReconSnapColors.successSurface : ReconSnapColors.riskSurface;
+    final fg = passed
+        ? ReconSnapColors.accentGreenDark
+        : ReconSnapColors.riskRed;
+    final bg = passed
+        ? ReconSnapColors.successSurface
+        : ReconSnapColors.riskSurface;
 
     return Container(
       padding: const EdgeInsets.all(AppSpacing.xl),
@@ -135,10 +195,9 @@ class _StatusCard extends StatelessWidget {
               children: [
                 Text(
                   passed ? 'Ready for export' : 'Needs review',
-                  style: Theme.of(context)
-                      .textTheme
-                      .titleMedium
-                      ?.copyWith(color: fg),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleMedium?.copyWith(color: fg),
                 ),
                 const SizedBox(height: 3),
                 Text(
@@ -146,8 +205,8 @@ class _StatusCard extends StatelessWidget {
                       ? 'No blocking balance issues were found.'
                       : 'Fix the highlighted issues before sending to accounting software.',
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: fg.withValues(alpha: 0.85),
-                      ),
+                    color: fg.withValues(alpha: 0.85),
+                  ),
                 ),
               ],
             ),
@@ -173,10 +232,24 @@ class _MetricGrid extends StatelessWidget {
       crossAxisSpacing: AppSpacing.md,
       mainAxisSpacing: AppSpacing.md,
       children: [
-        _MetricCard(label: 'Opening balance', value: _amount(report.openingBalance)),
-        _MetricCard(label: 'Closing balance', value: _amount(report.closingBalance)),
-        _MetricCard(label: 'Total debits', value: _amount(report.totalDebits), tone: PillTone.danger),
-        _MetricCard(label: 'Total credits', value: _amount(report.totalCredits), tone: PillTone.success),
+        _MetricCard(
+          label: 'Opening balance',
+          value: _amount(report.openingBalance),
+        ),
+        _MetricCard(
+          label: 'Closing balance',
+          value: _amount(report.closingBalance),
+        ),
+        _MetricCard(
+          label: 'Total debits',
+          value: _amount(report.totalDebits),
+          tone: PillTone.danger,
+        ),
+        _MetricCard(
+          label: 'Total credits',
+          value: _amount(report.totalCredits),
+          tone: PillTone.success,
+        ),
       ],
     );
   }
@@ -210,9 +283,9 @@ class _MetricCard extends StatelessWidget {
             child: Text(
               value,
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    color: accent,
-                    fontWeight: FontWeight.w900,
-                  ),
+                color: accent,
+                fontWeight: FontWeight.w900,
+              ),
             ),
           ),
         ],

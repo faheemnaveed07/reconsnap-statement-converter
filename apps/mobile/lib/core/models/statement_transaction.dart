@@ -29,6 +29,36 @@ class StatementTransaction {
 
   double get signedAmount => (credit ?? 0) - (debit ?? 0);
 
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'date': date.toIso8601String(),
+    'description': description,
+    'debit': debit,
+    'credit': credit,
+    'balance': balance,
+    'currency': currency,
+    'confidence': confidence,
+    'sourcePage': sourcePage,
+    'sourceLine': sourceLine,
+    'notes': notes,
+  };
+
+  factory StatementTransaction.fromJson(Map<String, dynamic> json) {
+    return StatementTransaction(
+      id: json['id'] as String,
+      date: DateTime.parse(json['date'] as String),
+      description: json['description'] as String,
+      debit: (json['debit'] as num?)?.toDouble(),
+      credit: (json['credit'] as num?)?.toDouble(),
+      balance: (json['balance'] as num?)?.toDouble(),
+      currency: json['currency'] as String? ?? 'AED',
+      confidence: (json['confidence'] as num?)?.toDouble() ?? 1,
+      sourcePage: (json['sourcePage'] as num?)?.toInt(),
+      sourceLine: (json['sourceLine'] as num?)?.toInt(),
+      notes: json['notes'] as String?,
+    );
+  }
+
   StatementTransaction copyWith({
     String? id,
     DateTime? date,

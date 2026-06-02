@@ -28,7 +28,15 @@ class HistoryScreen extends ConsumerWidget {
                 itemCount: history.length,
                 separatorBuilder: (_, _) =>
                     const SizedBox(height: AppSpacing.md),
-                itemBuilder: (context, i) => _HistoryTile(job: history[i]),
+                itemBuilder: (context, i) => _HistoryTile(
+                  job: history[i],
+                  onTap: () {
+                    ref
+                        .read(conversionControllerProvider.notifier)
+                        .openJob(history[i]);
+                    context.pushNamed('validation');
+                  },
+                ),
               ),
       ),
     );
@@ -76,9 +84,10 @@ class _Empty extends StatelessWidget {
 }
 
 class _HistoryTile extends StatelessWidget {
-  const _HistoryTile({required this.job});
+  const _HistoryTile({required this.job, required this.onTap});
 
   final ConversionJob job;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -86,7 +95,7 @@ class _HistoryTile extends StatelessWidget {
 
     return SoftCard(
       padding: const EdgeInsets.all(AppSpacing.lg),
-      onTap: () => context.pushNamed('validation'),
+      onTap: onTap,
       child: Row(
         children: [
           Container(

@@ -10,6 +10,23 @@ class ValidationIssue {
   final String title;
   final String message;
   final ValidationSeverity severity;
+
+  Map<String, dynamic> toJson() => {
+    'title': title,
+    'message': message,
+    'severity': severity.name,
+  };
+
+  factory ValidationIssue.fromJson(Map<String, dynamic> json) {
+    return ValidationIssue(
+      title: json['title'] as String,
+      message: json['message'] as String,
+      severity: ValidationSeverity.values.firstWhere(
+        (s) => s.name == json['severity'],
+        orElse: () => ValidationSeverity.warning,
+      ),
+    );
+  }
 }
 
 class ValidationReport {
@@ -39,4 +56,27 @@ class ValidationReport {
   bool get hasWarnings => issues
       .where((issue) => issue.severity == ValidationSeverity.warning)
       .isNotEmpty;
+
+  Map<String, dynamic> toJson() => {
+    'openingBalance': openingBalance,
+    'closingBalance': closingBalance,
+    'totalDebits': totalDebits,
+    'totalCredits': totalCredits,
+    'expectedClosingBalance': expectedClosingBalance,
+    'issues': issues.map((issue) => issue.toJson()).toList(),
+  };
+
+  factory ValidationReport.fromJson(Map<String, dynamic> json) {
+    return ValidationReport(
+      openingBalance: (json['openingBalance'] as num?)?.toDouble(),
+      closingBalance: (json['closingBalance'] as num?)?.toDouble(),
+      totalDebits: (json['totalDebits'] as num?)?.toDouble() ?? 0,
+      totalCredits: (json['totalCredits'] as num?)?.toDouble() ?? 0,
+      expectedClosingBalance: (json['expectedClosingBalance'] as num?)
+          ?.toDouble(),
+      issues: (json['issues'] as List<dynamic>? ?? [])
+          .map((e) => ValidationIssue.fromJson(e as Map<String, dynamic>))
+          .toList(),
+    );
+  }
 }
