@@ -49,7 +49,10 @@ class OnDevicePdfTextExtractor implements StatementTextExtractor {
           document.security.userPassword.isNotEmpty ||
           (password != null && password.isNotEmpty);
       pageCount = document.pages.count;
-      fullText = PdfTextExtractor(document).extractText();
+      // layoutText preserves the column spacing of the original PDF, so a
+      // transaction table stays row-per-line with its columns separated instead
+      // of being flattened into one run-on string (which makes rows unparseable).
+      fullText = PdfTextExtractor(document).extractText(layoutText: true);
     } finally {
       document.dispose();
     }

@@ -20,3 +20,7 @@ coverage/
 
 # Research clones can be large and are not app source.
 research/open-source-references/clones/
+
+# Sample bank statements used for local parser testing — may contain real
+# account data and must never be pushed.
+banks_statements/

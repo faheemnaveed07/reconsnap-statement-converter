@@ -108,6 +108,10 @@ class StatementDate {
 
   static DateTime? _build(int year, int month, int day) {
     if (month < 1 || month > 12 || day < 1 || day > 31) return null;
+    // Reject implausible years. A statement date outside this window is almost
+    // always a reference/amount fragment misread as a date (e.g. "5033"), which
+    // would otherwise emit a phantom transaction row.
+    if (year < 1990 || year > 2100) return null;
     final date = DateTime(year, month, day);
     // Reject overflow (e.g. 31 Feb -> 3 Mar).
     if (date.month != month || date.day != day) return null;
