@@ -11,14 +11,14 @@ import '../../../core/parsing/statement_parser.dart';
 import '../../../core/parsing/templated_statement_parser.dart';
 import '../../../core/parsing/text/statement_text_extractor.dart';
 import '../../../core/services/conversion_history_store.dart';
-import '../../billing/presentation/entitlements_controller.dart';
-import '../../../core/services/csv_export_service.dart';
-import '../../../core/services/xlsx_export_service.dart';
+import '../../../core/services/statement_exporter.dart';
 import '../../../core/validation/validation_engine.dart';
+import '../../billing/presentation/entitlements_controller.dart';
 
 final validationEngineProvider = Provider((ref) => const ValidationEngine());
-final csvExportServiceProvider = Provider((ref) => CsvExportService());
-final xlsxExportServiceProvider = Provider((ref) => XlsxExportService());
+
+/// One entry point for all export formats (CSV, Excel, OFX, QuickBooks/Xero).
+final statementExporterProvider = Provider((ref) => StatementExporter());
 
 /// Persists conversion history across app restarts.
 final conversionHistoryStoreProvider = Provider(

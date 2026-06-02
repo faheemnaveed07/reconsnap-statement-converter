@@ -9,6 +9,7 @@ import '../../../app/theme/app_tokens.dart';
 import '../../../app/theme/reconsnap_theme.dart';
 import '../../../app/widgets/app_components.dart';
 import '../../../core/models/validation_report.dart';
+import '../../../core/services/statement_exporter.dart';
 import 'conversion_controller.dart';
 
 class ValidationScreen extends ConsumerWidget {
@@ -61,17 +62,16 @@ class ValidationScreen extends ConsumerWidget {
                   const SizedBox(height: AppSpacing.xl),
                   Builder(
                     builder: (buttonContext) => ElevatedButton.icon(
-                      onPressed: () => _exportCsv(buttonContext, ref),
+                      onPressed: () => _pickAndExport(buttonContext, ref),
                       icon: const Icon(Icons.ios_share_rounded),
-                      label: const Text('Export CSV'),
+                      label: const Text('Export'),
                     ),
                   ),
-                  const SizedBox(height: AppSpacing.md),
-                  Builder(
-                    builder: (buttonContext) => OutlinedButton.icon(
-                      onPressed: () => _exportXlsx(buttonContext, ref),
-                      icon: const Icon(Icons.grid_on_rounded),
-                      label: const Text('Export XLSX'),
+                  const SizedBox(height: AppSpacing.sm),
+                  Center(
+                    child: Text(
+                      'CSV · Excel · QuickBooks/Xero · OFX',
+                      style: Theme.of(context).textTheme.bodySmall,
                     ),
                   ),
                 ],
@@ -80,36 +80,38 @@ class ValidationScreen extends ConsumerWidget {
     );
   }
 
-  Future<void> _exportCsv(BuildContext context, WidgetRef ref) async {
-    final state = ref.read(conversionControllerProvider);
-    final job = state.activeJob;
-    if (job == null) return;
-    final file = await ref
-        .read(csvExportServiceProvider)
-        .writeCsv(filename: job.filename, transactions: state.transactions);
-    if (context.mounted) {
-      await _shareFile(
-        context,
-        file,
-        '${job.bank.name} statement (CSV)',
-        'text/csv',
-      );
-    }
-  }
+  Future<void> _pickAndExport(BuildContext context, WidgetRef ref) async {
+    final format = await showModalBottomSheet<ExportFormat>(
+      context: context,
+      showDragHandle: true,
+      builder: (_) => const _FormatPicker(),
+    );
+    if (format == null || !context.mounted) return;
 
-  Future<void> _exportXlsx(BuildContext context, WidgetRef ref) async {
     final state = ref.read(conversionControllerProvider);
     final job = state.activeJob;
     if (job == null) return;
-    final file = await ref
-        .read(xlsxExportServiceProvider)
-        .writeXlsx(filename: job.filename, transactions: state.transactions);
-    if (context.mounted) {
+    try {
+      final file = await ref
+          .read(statementExporterProvider)
+          .export(
+            format,
+            sourceFilename: job.filename,
+            transactions: state.transactions,
+          );
+      if (!context.mounted) return;
       await _shareFile(
         context,
         file,
-        '${job.bank.name} statement (XLSX)',
-        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        '${job.bank.name} statement',
+        format.mimeType,
+      );
+    } catch (_) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Could not export the file. Please try again.'),
+        ),
       );
     }
   }
@@ -349,4 +351,55 @@ class _NoteTile extends StatelessWidget {
 String _amount(double? value) {
   if (value == null) return '—';
   return NumberFormat('#,##0.00').format(value);
+}
+
+/// Bottom sheet that lets the user pick an export format; pops the chosen one.
+class _FormatPicker extends StatelessWidget {
+  const _FormatPicker();
+
+  static const _icons = {
+    ExportFormat.xlsx: Icons.grid_on_rounded,
+    ExportFormat.csvDetailed: Icons.table_rows_rounded,
+    ExportFormat.csvAccounting: Icons.account_balance_rounded,
+    ExportFormat.ofx: Icons.sync_alt_rounded,
+  };
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.lg,
+          0,
+          AppSpacing.lg,
+          AppSpacing.lg,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(
+                left: AppSpacing.sm,
+                bottom: AppSpacing.sm,
+              ),
+              child: Text(
+                'Export as',
+                style: Theme.of(
+                  context,
+                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+              ),
+            ),
+            for (final format in ExportFormat.values)
+              ListTile(
+                leading: Icon(_icons[format], color: ReconSnapColors.ink700),
+                title: Text(format.label),
+                subtitle: Text(format.description),
+                onTap: () => Navigator.of(context).pop(format),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
 }
