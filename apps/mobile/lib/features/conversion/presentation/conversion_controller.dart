@@ -2,9 +2,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../../core/categorization/transaction_categorizer.dart';
+import '../../../core/diagnostics/conversion_outcome.dart';
+import '../../../core/diagnostics/diagnostics_store.dart';
 import '../../../core/models/bank.dart';
 import '../../../core/models/conversion_job.dart';
 import '../../../core/models/statement_transaction.dart';
+import '../../../core/parsing/classification/document_classifier.dart';
 import '../../../core/parsing/mock_statement_parser.dart';
 import '../../../core/parsing/on_device_pdf_text_extractor.dart';
 import '../../../core/parsing/positioned/positioned_pdf_extractor.dart';
@@ -24,6 +27,9 @@ final statementExporterProvider = Provider((ref) => StatementExporter());
 
 /// Asks for an app-store review after a few successful conversions.
 final reviewPrompterProvider = Provider((ref) => ReviewPrompter());
+
+/// Privacy-safe log of conversion outcomes (no statement content).
+final diagnosticsStoreProvider = Provider((ref) => DiagnosticsStore());
 
 /// Rule-based accounting categorizer applied to each parsed transaction.
 final transactionCategorizerProvider = Provider(
@@ -192,6 +198,7 @@ class ConversionController extends Notifier<ConversionState> {
       );
 
       if (result.transactions.isEmpty) {
+        _record(ConversionOutcomeType.noTransactions);
         state = state.copyWith(
           status: ConversionStatus.failed,
           errorMessage:
@@ -201,9 +208,16 @@ class ConversionController extends Notifier<ConversionState> {
       }
 
       _completeWith(result, validator, filename);
+      _record(
+        ConversionOutcomeType.success,
+        parserVersion: result.parserVersion,
+        count: result.transactions.length,
+        reconciled: state.activeJob?.validationReport.isPassed,
+      );
       // A successful real conversion spends one credit (the demo is free).
       ref.read(entitlementsProvider.notifier).consumeOne();
     } on PasswordRequiredException {
+      _record(ConversionOutcomeType.needsPassword);
       state = state.copyWith(
         status: ConversionStatus.needsPassword,
         errorMessage: null,
@@ -211,26 +225,56 @@ class ConversionController extends Notifier<ConversionState> {
     } on UnsupportedDocumentException catch (e) {
       // Not an account statement (annual report, form, unreadable text) — tell
       // the user why instead of showing a generic failure.
+      _record(
+        e.kind == DocumentKind.unreadable
+            ? ConversionOutcomeType.unreadable
+            : ConversionOutcomeType.notAStatement,
+      );
       state = state.copyWith(
         status: ConversionStatus.failed,
         errorMessage: e.message,
       );
     } on OcrNotSupportedException catch (e) {
+      _record(ConversionOutcomeType.needsOcr);
       state = state.copyWith(
         status: ConversionStatus.failed,
         errorMessage: e.message,
       );
     } on ExtractionException catch (e) {
+      _record(ConversionOutcomeType.failed);
       state = state.copyWith(
         status: ConversionStatus.failed,
         errorMessage: e.message,
       );
     } catch (_) {
+      _record(ConversionOutcomeType.failed);
       state = state.copyWith(
         status: ConversionStatus.failed,
         errorMessage: 'Conversion failed. Please try another file.',
       );
     }
+  }
+
+  /// Logs a privacy-safe outcome (no statement content) for the failure-coverage
+  /// flywheel. Fire-and-forget; never blocks or breaks the conversion.
+  void _record(
+    ConversionOutcomeType type, {
+    String? parserVersion,
+    int count = 0,
+    bool? reconciled,
+  }) {
+    ref
+        .read(diagnosticsStoreProvider)
+        .record(
+          ConversionOutcome(
+            at: DateTime.now(),
+            type: type,
+            bankId: state.selectedBank.id,
+            parserVersion: parserVersion,
+            transactionCount: count,
+            reconciled: reconciled,
+          ),
+        );
   }
 
   /// Retries the in-flight conversion with a user-supplied password.

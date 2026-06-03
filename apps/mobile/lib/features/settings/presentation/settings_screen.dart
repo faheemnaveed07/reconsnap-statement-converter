@@ -70,6 +70,14 @@ class SettingsScreen extends ConsumerWidget {
               title: 'Processing',
               subtitle: 'On your device — works offline, nothing uploaded.',
             ),
+            const SizedBox(height: AppSpacing.md),
+            _SettingsTile(
+              icon: Icons.insights_rounded,
+              title: 'Diagnostics',
+              subtitle:
+                  'Conversion outcomes (no statement content) you can share.',
+              onTap: () => context.pushNamed('diagnostics'),
+            ),
           ],
         ),
       ),
