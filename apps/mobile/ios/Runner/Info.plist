@@ -66,5 +66,9 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<key>NSCameraUsageDescription</key>
+	<string>ReconSnap uses the camera so you can photograph a bank statement and convert it on your device.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>ReconSnap reads a statement image you choose from your photos and converts it on your device.</string>
 </dict>
 </plist>
