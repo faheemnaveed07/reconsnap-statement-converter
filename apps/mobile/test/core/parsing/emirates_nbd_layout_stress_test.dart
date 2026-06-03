@@ -85,4 +85,26 @@ void main() {
       expect(report.closingReconciled, isTrue);
     },
   );
+
+  test('auto-detects the bank, overriding a wrong manual pick', () async {
+    // User picked a different bank, but the PDF fingerprints as Emirates NBD.
+    final wrongBank = launchBanks.firstWhere((b) => b.id != 'ae_emirates_nbd');
+
+    final result =
+        await const TemplatedStatementParser(
+          extractor: OnDevicePdfTextExtractor(),
+        ).parse(
+          ParseInput(
+            filename: 'enbd.pdf',
+            bank: wrongBank,
+            bytes: buildEnbdSamplePdf(),
+          ),
+        );
+
+    expect(result.bank.id, 'ae_emirates_nbd');
+    expect(
+      result.warnings.any((w) => w.toLowerCase().contains('auto-detected')),
+      isTrue,
+    );
+  });
 }

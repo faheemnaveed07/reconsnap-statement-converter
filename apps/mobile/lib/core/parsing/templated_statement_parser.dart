@@ -1,3 +1,4 @@
+import '../models/bank.dart';
 import 'classification/document_classifier.dart';
 import 'positioned/positioned_pdf_extractor.dart';
 import 'statement_parser.dart';
@@ -74,9 +75,24 @@ class TemplatedStatementParser implements StatementParser {
       );
     }
 
-    final currency = _currencyByCountry[input.bank.countryCode] ?? 'AED';
     final template = _registry.detect(doc, hintBankId: input.bank.id);
 
+    // Auto-detect the bank from the statement's own fingerprint: when a template
+    // matches, the document's bank wins over the user's manual selection (and the
+    // currency follows it).
+    var bank = input.bank;
+    final notes = <String>[];
+    if (template != null) {
+      final detected = _bankById(template.bankId);
+      if (detected != null) {
+        bank = detected;
+        if (detected.id != input.bank.id) {
+          notes.add('Auto-detected ${detected.name} from the statement.');
+        }
+      }
+    }
+
+    final currency = _currencyByCountry[bank.countryCode] ?? 'AED';
     final ParsedStatement parsed;
     final String version;
     if (template != null) {
@@ -90,10 +106,17 @@ class TemplatedStatementParser implements StatementParser {
     }
 
     return ParseResult(
-      bank: input.bank,
+      bank: bank,
       transactions: parsed.transactions,
       parserVersion: version,
-      warnings: parsed.warnings,
+      warnings: [...notes, ...parsed.warnings],
     );
+  }
+
+  static Bank? _bankById(String id) {
+    for (final b in launchBanks) {
+      if (b.id == id) return b;
+    }
+    return null;
   }
 }
