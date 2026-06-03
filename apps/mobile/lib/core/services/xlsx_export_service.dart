@@ -20,6 +20,7 @@ class XlsxExportService {
   static const _headers = [
     'Date',
     'Description',
+    'Category',
     'Debit',
     'Credit',
     'Balance',
@@ -47,11 +48,12 @@ class XlsxExportService {
 
         sheet.getRangeByIndex(row, 1).setText(_dateFormat.format(t.date));
         sheet.getRangeByIndex(row, 2).setText(t.description);
-        _money(sheet.getRangeByIndex(row, 3), t.debit);
-        _money(sheet.getRangeByIndex(row, 4), t.credit);
-        _money(sheet.getRangeByIndex(row, 5), t.balance);
+        sheet.getRangeByIndex(row, 3).setText(t.category ?? '');
+        _money(sheet.getRangeByIndex(row, 4), t.debit);
+        _money(sheet.getRangeByIndex(row, 5), t.credit);
+        _money(sheet.getRangeByIndex(row, 6), t.balance);
         sheet
-            .getRangeByIndex(row, 6)
+            .getRangeByIndex(row, 7)
             .setText('${(t.confidence * 100).toStringAsFixed(0)}%');
       }
 

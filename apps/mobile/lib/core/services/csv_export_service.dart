@@ -14,11 +14,20 @@ class CsvExportService {
 
   String buildCsv(List<StatementTransaction> transactions) {
     final rows = [
-      ['Date', 'Description', 'Debit', 'Credit', 'Balance', 'Confidence'],
+      [
+        'Date',
+        'Description',
+        'Category',
+        'Debit',
+        'Credit',
+        'Balance',
+        'Confidence',
+      ],
       ...transactions.map(
         (transaction) => [
           _dateFormat.format(transaction.date),
           transaction.description,
+          transaction.category ?? '',
           _formatAmount(transaction.debit),
           _formatAmount(transaction.credit),
           _formatAmount(transaction.balance),

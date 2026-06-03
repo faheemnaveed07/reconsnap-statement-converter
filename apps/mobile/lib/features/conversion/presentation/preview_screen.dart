@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import '../../../app/theme/app_tokens.dart';
 import '../../../app/theme/reconsnap_theme.dart';
 import '../../../app/widgets/app_components.dart';
+import '../../../core/categorization/transaction_categorizer.dart';
 import '../../../core/models/conversion_job.dart';
 import '../../../core/models/statement_transaction.dart';
 import 'conversion_controller.dart';
@@ -178,6 +179,13 @@ class _TransactionTile extends ConsumerWidget {
                   '${DateFormat('d MMM yyyy').format(transaction.date)}  ·  Bal ${_money(transaction.balance, transaction.currency)}',
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
+                if (transaction.category != null) ...[
+                  const SizedBox(height: 6),
+                  StatusPill(
+                    label: transaction.category!,
+                    icon: Icons.sell_outlined,
+                  ),
+                ],
               ],
             ),
           ),
@@ -223,6 +231,7 @@ class _EditSheetState extends State<_EditSheet> {
   late final TextEditingController _description;
   late final TextEditingController _amount;
   late bool _isCredit;
+  late String _category;
 
   @override
   void initState() {
@@ -230,6 +239,7 @@ class _EditSheetState extends State<_EditSheet> {
     final t = widget.transaction;
     _description = TextEditingController(text: t.description);
     _isCredit = t.credit != null;
+    _category = t.category ?? TransactionCategories.uncategorized;
     _amount = TextEditingController(
       text: ((t.credit ?? t.debit) ?? 0).toStringAsFixed(2),
     );
@@ -298,6 +308,17 @@ class _EditSheetState extends State<_EditSheet> {
             selected: {_isCredit},
             onSelectionChanged: (s) => setState(() => _isCredit = s.first),
           ),
+          const SizedBox(height: AppSpacing.md),
+          DropdownButtonFormField<String>(
+            initialValue: _category,
+            isExpanded: true,
+            decoration: const InputDecoration(labelText: 'Category'),
+            items: [
+              for (final c in TransactionCategories.all)
+                DropdownMenuItem(value: c, child: Text(c)),
+            ],
+            onChanged: (v) => setState(() => _category = v ?? _category),
+          ),
           const SizedBox(height: AppSpacing.xl),
           ElevatedButton(
             onPressed: _save,
@@ -325,6 +346,7 @@ class _EditSheetState extends State<_EditSheet> {
       sourcePage: t.sourcePage,
       sourceLine: t.sourceLine,
       notes: t.notes,
+      category: _category,
     );
     widget.ref
         .read(conversionControllerProvider.notifier)

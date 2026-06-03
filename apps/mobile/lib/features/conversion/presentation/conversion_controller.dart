@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 
+import '../../../core/categorization/transaction_categorizer.dart';
 import '../../../core/models/bank.dart';
 import '../../../core/models/conversion_job.dart';
 import '../../../core/models/statement_transaction.dart';
@@ -19,6 +20,11 @@ final validationEngineProvider = Provider((ref) => const ValidationEngine());
 
 /// One entry point for all export formats (CSV, Excel, OFX, QuickBooks/Xero).
 final statementExporterProvider = Provider((ref) => StatementExporter());
+
+/// Rule-based accounting categorizer applied to each parsed transaction.
+final transactionCategorizerProvider = Provider(
+  (ref) => const TransactionCategorizer(),
+);
 
 /// Persists conversion history across app restarts.
 final conversionHistoryStoreProvider = Provider(
@@ -260,19 +266,27 @@ class ConversionController extends Notifier<ConversionState> {
     ValidationEngine validator,
     String filename,
   ) {
-    final report = validator.validate(result.transactions);
+    final categorizer = ref.read(transactionCategorizerProvider);
+    final transactions = [
+      for (final t in result.transactions)
+        t.category != null
+            ? t
+            : t.copyWith(category: categorizer.categorize(t)),
+    ];
+
+    final report = validator.validate(transactions);
     final job = ConversionJob(
       id: _uuid.v4(),
       filename: filename,
       bank: result.bank,
-      transactions: result.transactions,
+      transactions: transactions,
       validationReport: report,
       createdAt: DateTime.now(),
     );
 
     state = state.copyWith(
       status: ConversionStatus.ready,
-      transactions: result.transactions,
+      transactions: transactions,
       warnings: result.warnings,
       activeJob: job,
       history: [job, ...state.history],

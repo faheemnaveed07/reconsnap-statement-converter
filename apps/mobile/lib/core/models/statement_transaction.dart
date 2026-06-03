@@ -13,6 +13,7 @@ class StatementTransaction {
     this.sourcePage,
     this.sourceLine,
     this.notes,
+    this.category,
   });
 
   final String id;
@@ -26,6 +27,10 @@ class StatementTransaction {
   final int? sourcePage;
   final int? sourceLine;
   final String? notes;
+
+  /// Accounting category (e.g. "Bank Charges", "Travel & Transport"). Assigned
+  /// by the rule-based categorizer and editable by the user.
+  final String? category;
 
   double get signedAmount => (credit ?? 0) - (debit ?? 0);
 
@@ -41,6 +46,7 @@ class StatementTransaction {
     'sourcePage': sourcePage,
     'sourceLine': sourceLine,
     'notes': notes,
+    'category': category,
   };
 
   factory StatementTransaction.fromJson(Map<String, dynamic> json) {
@@ -56,6 +62,7 @@ class StatementTransaction {
       sourcePage: (json['sourcePage'] as num?)?.toInt(),
       sourceLine: (json['sourceLine'] as num?)?.toInt(),
       notes: json['notes'] as String?,
+      category: json['category'] as String?,
     );
   }
 
@@ -71,6 +78,7 @@ class StatementTransaction {
     int? sourcePage,
     int? sourceLine,
     String? notes,
+    String? category,
   }) {
     return StatementTransaction(
       id: id ?? this.id,
@@ -84,6 +92,7 @@ class StatementTransaction {
       sourcePage: sourcePage ?? this.sourcePage,
       sourceLine: sourceLine ?? this.sourceLine,
       notes: notes ?? this.notes,
+      category: category ?? this.category,
     );
   }
 
@@ -100,7 +109,8 @@ class StatementTransaction {
         other.confidence == confidence &&
         other.sourcePage == sourcePage &&
         other.sourceLine == sourceLine &&
-        other.notes == notes;
+        other.notes == notes &&
+        other.category == category;
   }
 
   @override
@@ -116,6 +126,7 @@ class StatementTransaction {
     sourcePage,
     sourceLine,
     notes,
+    category,
   );
 }
 

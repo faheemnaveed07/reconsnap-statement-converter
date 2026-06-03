@@ -15,8 +15,11 @@ void main() {
       ),
     ]);
 
-    expect(csv, contains('Date,Description,Debit,Credit,Balance,Confidence'));
-    expect(csv, contains('2026-05-01,Client payment,,250.00,1250.00,90%'));
+    expect(
+      csv,
+      contains('Date,Description,Category,Debit,Credit,Balance,Confidence'),
+    );
+    expect(csv, contains('2026-05-01,Client payment,,,250.00,1250.00,90%'));
   });
 
   test('derives a clean .csv export name from the source filename', () {
