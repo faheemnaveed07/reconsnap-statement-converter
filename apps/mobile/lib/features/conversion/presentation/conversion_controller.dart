@@ -10,6 +10,7 @@ import '../../../core/models/statement_transaction.dart';
 import '../../../core/ocr/ml_kit_ocr_recognizer.dart';
 import '../../../core/ocr/ocr_document_extractor.dart';
 import '../../../core/ocr/ocr_recognizer.dart';
+import '../../../core/ocr/pdf_rasterizer.dart';
 import '../../../core/parsing/classification/document_classifier.dart';
 import '../../../core/parsing/mock_statement_parser.dart';
 import '../../../core/parsing/on_device_pdf_text_extractor.dart';
@@ -79,6 +80,11 @@ final ocrRecognizerProvider = Provider<OcrRecognizer>((ref) {
 
 final ocrDocumentExtractorProvider = Provider(
   (ref) => OcrDocumentExtractor(ref.watch(ocrRecognizerProvider)),
+);
+
+/// Renders scanned (no-text-layer) PDFs to images so they can enter OCR.
+final pdfRasterizerProvider = Provider<PdfRasterizer>(
+  (ref) => const PrintingPdfRasterizer(),
 );
 
 final conversionControllerProvider =
@@ -254,12 +260,10 @@ class ConversionController extends Notifier<ConversionState> {
         status: ConversionStatus.failed,
         errorMessage: e.message,
       );
-    } on OcrNotSupportedException catch (e) {
-      _record(ConversionOutcomeType.needsOcr);
-      state = state.copyWith(
-        status: ConversionStatus.failed,
-        errorMessage: e.message,
-      );
+    } on OcrNotSupportedException {
+      // Scanned PDF (no text layer) — rasterise its pages and run OCR through
+      // the same pipeline instead of giving up.
+      await _convertScannedPdf(bytes, filename, password);
     } on ExtractionException catch (e) {
       _record(ConversionOutcomeType.failed);
       state = state.copyWith(
@@ -271,6 +275,77 @@ class ConversionController extends Notifier<ConversionState> {
       state = state.copyWith(
         status: ConversionStatus.failed,
         errorMessage: 'Conversion failed. Please try another file.',
+      );
+    }
+  }
+
+  /// Scanned-PDF path: rasterise the pages to images, OCR them, then run the
+  /// same classify → template → reconcile pipeline. Called when the digital
+  /// extractor finds no text layer.
+  Future<void> _convertScannedPdf(
+    List<int> bytes,
+    String filename,
+    String? password,
+  ) async {
+    final rasterizer = ref.read(pdfRasterizerProvider);
+    final ocr = ref.read(ocrDocumentExtractorProvider);
+    final parser = ref.read(templatedStatementParserProvider);
+    final validator = ref.read(validationEngineProvider);
+
+    try {
+      final pages = await rasterizer.rasterizeToImageFiles(
+        bytes,
+        password: password,
+      );
+      if (pages.isEmpty) {
+        _record(ConversionOutcomeType.needsOcr);
+        state = state.copyWith(
+          status: ConversionStatus.failed,
+          errorMessage:
+              "Couldn't read this scanned PDF. Try a clearer scan or a digital "
+              'PDF export.',
+        );
+        return;
+      }
+
+      final doc = await ocr.extractMany(pages);
+      final result = parser.parseExtracted(doc, state.selectedBank);
+
+      if (result.transactions.isEmpty) {
+        _record(ConversionOutcomeType.noTransactions);
+        state = state.copyWith(
+          status: ConversionStatus.failed,
+          errorMessage:
+              'No transactions were detected in this scanned statement.',
+        );
+        return;
+      }
+
+      _completeWith(result, validator, filename);
+      _record(
+        ConversionOutcomeType.success,
+        parserVersion: '${result.parserVersion}+ocrpdf',
+        count: result.transactions.length,
+        reconciled: state.activeJob?.validationReport.isPassed,
+      );
+      ref.read(entitlementsProvider.notifier).consumeOne();
+    } on UnsupportedDocumentException catch (e) {
+      _record(
+        e.kind == DocumentKind.unreadable
+            ? ConversionOutcomeType.unreadable
+            : ConversionOutcomeType.notAStatement,
+      );
+      state = state.copyWith(
+        status: ConversionStatus.failed,
+        errorMessage: e.message,
+      );
+    } catch (_) {
+      _record(ConversionOutcomeType.failed);
+      state = state.copyWith(
+        status: ConversionStatus.failed,
+        errorMessage:
+            "Couldn't read this scanned PDF. Try a clearer scan or a digital "
+            'PDF export.',
       );
     }
   }

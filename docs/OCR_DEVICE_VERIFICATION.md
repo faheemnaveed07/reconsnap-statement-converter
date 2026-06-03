@@ -52,12 +52,21 @@ Run on a real Android phone and a real iPhone:
 5. **iOS pods** — `cd ios && pod install` (or `flutter build ios`) succeeds with
    the 15.5 target.
 
+## Scanned PDFs (added)
+
+A PDF with no text layer is now **rasterised page-by-page** (`printing`) and the
+page images are OCR'd and merged into one document, which flows through the same
+classify → template → reconcile pipeline. Password-protected scans are decrypted
+in memory (Syncfusion) before rasterising. Add a real scanned PDF to the
+on-device checklist: Upload → Browse PDF → pick a scanned statement → confirm it
+converts (it should no longer say "OCR coming soon").
+
 ## Known limitations (deliberately not yet solved)
 
 - **OCR accuracy on real scans is unmeasured.** This makes scans *work*; whether
   they're *accurate enough* needs real scanned statements run through the
   harness. Low-confidence rows are flagged, so errors surface for review rather
   than ship silently.
-- **Input is images only** — a scanned *PDF* (no text layer) still shows
-  "OCR coming soon". Routing scanned PDFs through OCR needs PDF-page→image
-  rasterisation (the next slice).
+- **Rasterisation is device-only** (`printing` uses platform PDF renderers), so
+  it is not covered by host tests — verify on a real device. The merge/parse
+  logic it feeds *is* unit-tested.

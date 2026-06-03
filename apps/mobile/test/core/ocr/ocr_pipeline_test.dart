@@ -70,6 +70,22 @@ void main() {
     expect(doc.lines.first.words.first.centerX, 10 + (5 * 6) / 2);
   });
 
+  test('multi-page OCR merges in page order with page indices', () {
+    final doc = OcrDocumentExtractor.toDocumentFromPages([
+      OcrResult([
+        OcrLine([_w('page0', 10, 10)]),
+      ]),
+      OcrResult([
+        OcrLine([_w('page1', 10, 10)]),
+      ]),
+    ]);
+
+    expect(doc.numPages, 2);
+    expect(doc.lines.map((l) => l.text), ['page0', 'page1']);
+    expect(doc.lines[0].pageIndex, 0);
+    expect(doc.lines[1].pageIndex, 1);
+  });
+
   test('an OCR statement flows through the column pipeline and reconciles', () {
     final doc = OcrDocumentExtractor.toDocument(_enbdOcr());
 
