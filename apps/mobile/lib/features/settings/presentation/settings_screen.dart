@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../../../app/theme/app_tokens.dart';
 import '../../../app/theme/reconsnap_theme.dart';
 import '../../../app/widgets/app_components.dart';
+import '../../../core/services/review_prompter.dart';
 import '../../billing/presentation/entitlements_controller.dart';
 
 class SettingsScreen extends ConsumerWidget {
@@ -46,6 +48,19 @@ class SettingsScreen extends ConsumerWidget {
               icon: Icons.support_agent_rounded,
               title: 'Request bank support',
               subtitle: 'Tell us which bank to add next.',
+            ),
+            const SizedBox(height: AppSpacing.md),
+            _SettingsTile(
+              icon: Icons.ios_share_rounded,
+              title: 'Share ReconSnap',
+              subtitle: 'Tell a colleague who drowns in manual data entry.',
+              onTap: () => SharePlus.instance.share(
+                ShareParams(
+                  text:
+                      'Convert bank statement PDFs to Excel/CSV/QuickBooks with '
+                      'ReconSnap — on-device and balance-validated. $appShareUrl',
+                ),
+              ),
             ),
             const SizedBox(height: AppSpacing.xl),
             SectionHeader(title: 'About'),

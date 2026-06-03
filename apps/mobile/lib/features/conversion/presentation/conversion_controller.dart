@@ -12,6 +12,7 @@ import '../../../core/parsing/statement_parser.dart';
 import '../../../core/parsing/templated_statement_parser.dart';
 import '../../../core/parsing/text/statement_text_extractor.dart';
 import '../../../core/services/conversion_history_store.dart';
+import '../../../core/services/review_prompter.dart';
 import '../../../core/services/statement_exporter.dart';
 import '../../../core/validation/validation_engine.dart';
 import '../../billing/presentation/entitlements_controller.dart';
@@ -20,6 +21,9 @@ final validationEngineProvider = Provider((ref) => const ValidationEngine());
 
 /// One entry point for all export formats (CSV, Excel, OFX, QuickBooks/Xero).
 final statementExporterProvider = Provider((ref) => StatementExporter());
+
+/// Asks for an app-store review after a few successful conversions.
+final reviewPrompterProvider = Provider((ref) => ReviewPrompter());
 
 /// Rule-based accounting categorizer applied to each parsed transaction.
 final transactionCategorizerProvider = Provider(
@@ -292,6 +296,8 @@ class ConversionController extends Notifier<ConversionState> {
       history: [job, ...state.history],
     );
     _persistHistory();
+    // A completed conversion is a positive moment — maybe ask for a review.
+    ref.read(reviewPrompterProvider).recordPositiveEventAndMaybeAsk();
   }
 
   void updateTransaction(StatementTransaction updated) {
