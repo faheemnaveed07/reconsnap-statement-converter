@@ -7,6 +7,9 @@ import '../../../core/diagnostics/diagnostics_store.dart';
 import '../../../core/models/bank.dart';
 import '../../../core/models/conversion_job.dart';
 import '../../../core/models/statement_transaction.dart';
+import '../../../core/ocr/ml_kit_ocr_recognizer.dart';
+import '../../../core/ocr/ocr_document_extractor.dart';
+import '../../../core/ocr/ocr_recognizer.dart';
 import '../../../core/parsing/classification/document_classifier.dart';
 import '../../../core/parsing/mock_statement_parser.dart';
 import '../../../core/parsing/on_device_pdf_text_extractor.dart';
@@ -53,12 +56,29 @@ final positionedPdfExtractorProvider = Provider<PositionedPdfExtractor>(
   (ref) => const OnDevicePdfTextExtractor(),
 );
 
-/// Real parser for digital PDFs: document-type gate → bank-specific column
-/// template (Emirates NBD today) → generic balance-reconciling fallback.
-final digitalStatementParserProvider = Provider<StatementParser>(
+/// The orchestrating parser. Exposed concretely so the OCR path can reuse its
+/// `parseExtracted` core on an image-derived document.
+final templatedStatementParserProvider = Provider<TemplatedStatementParser>(
   (ref) => TemplatedStatementParser(
     extractor: ref.watch(positionedPdfExtractorProvider),
   ),
+);
+
+/// Real parser for digital PDFs: document-type gate → bank-specific column
+/// template (Emirates NBD today) → generic balance-reconciling fallback.
+final digitalStatementParserProvider = Provider<StatementParser>(
+  (ref) => ref.watch(templatedStatementParserProvider),
+);
+
+/// On-device OCR (ML Kit) for photos and scans — no upload.
+final ocrRecognizerProvider = Provider<OcrRecognizer>((ref) {
+  final recognizer = MlKitOcrRecognizer();
+  ref.onDispose(recognizer.dispose);
+  return recognizer;
+});
+
+final ocrDocumentExtractorProvider = Provider(
+  (ref) => OcrDocumentExtractor(ref.watch(ocrRecognizerProvider)),
 );
 
 final conversionControllerProvider =
@@ -283,6 +303,70 @@ class ConversionController extends Notifier<ConversionState> {
     final filename = state.filename;
     if (bytes == null || filename == null) return;
     await startConversion(bytes: bytes, filename: filename, password: password);
+  }
+
+  /// Converts a photo or scanned image via on-device OCR, then runs the exact
+  /// same classify → template → reconcile pipeline as a digital PDF.
+  Future<void> startImageConversion({
+    required String imagePath,
+    required String filename,
+  }) async {
+    state = state.copyWith(
+      status: ConversionStatus.processing,
+      filename: filename,
+      errorMessage: null,
+    );
+
+    final extractor = ref.read(ocrDocumentExtractorProvider);
+    final parser = ref.read(templatedStatementParserProvider);
+    final validator = ref.read(validationEngineProvider);
+
+    try {
+      final doc = await extractor.extract(imagePath);
+      final result = parser.parseExtracted(doc, state.selectedBank);
+
+      if (result.transactions.isEmpty) {
+        _record(ConversionOutcomeType.noTransactions);
+        state = state.copyWith(
+          status: ConversionStatus.failed,
+          errorMessage:
+              'No transactions were detected. Try a clearer photo of the full '
+              'statement, or upload the PDF instead.',
+        );
+        return;
+      }
+
+      _completeWith(result, validator, filename);
+      _record(
+        ConversionOutcomeType.success,
+        parserVersion: '${result.parserVersion}+ocr',
+        count: result.transactions.length,
+        reconciled: state.activeJob?.validationReport.isPassed,
+      );
+      ref.read(entitlementsProvider.notifier).consumeOne();
+    } on OcrFailedException catch (e) {
+      _record(ConversionOutcomeType.unreadable);
+      state = state.copyWith(
+        status: ConversionStatus.failed,
+        errorMessage: e.message,
+      );
+    } on UnsupportedDocumentException catch (e) {
+      _record(
+        e.kind == DocumentKind.unreadable
+            ? ConversionOutcomeType.unreadable
+            : ConversionOutcomeType.notAStatement,
+      );
+      state = state.copyWith(
+        status: ConversionStatus.failed,
+        errorMessage: e.message,
+      );
+    } catch (_) {
+      _record(ConversionOutcomeType.failed);
+      state = state.copyWith(
+        status: ConversionStatus.failed,
+        errorMessage: 'Conversion failed. Please try another image.',
+      );
+    }
   }
 
   Future<void> startMockConversion({String? filename}) async {

@@ -2,6 +2,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../../../app/theme/app_tokens.dart';
 import '../../../app/theme/reconsnap_theme.dart';
@@ -87,7 +88,7 @@ class UploadScreen extends ConsumerWidget {
                   ),
                   const SizedBox(height: AppSpacing.sm),
                   Text(
-                    'Digital PDFs are supported today. Scanned statements will use OCR in a later release.',
+                    'Upload a digital PDF, or snap a photo of a printed or scanned statement — both are read on your device.',
                     style: Theme.of(context).textTheme.bodyMedium,
                   ),
                   const SizedBox(height: AppSpacing.lg),
@@ -98,6 +99,12 @@ class UploadScreen extends ConsumerWidget {
                   ),
                   const SizedBox(height: AppSpacing.md),
                   OutlinedButton.icon(
+                    onPressed: () => _scan(context, ref),
+                    icon: const Icon(Icons.photo_camera_rounded),
+                    label: const Text('Photo or scan'),
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                  TextButton.icon(
                     onPressed: () async {
                       await controller.startMockConversion();
                       if (context.mounted) context.goNamed('processing');
@@ -133,6 +140,42 @@ class UploadScreen extends ConsumerWidget {
     await ref
         .read(conversionControllerProvider.notifier)
         .startConversion(bytes: bytes, filename: file.name);
+    if (context.mounted) context.goNamed('processing');
+  }
+
+  Future<void> _scan(BuildContext context, WidgetRef ref) async {
+    if (!ref.read(entitlementsProvider).canConvert) {
+      context.pushNamed('paywall');
+      return;
+    }
+    final source = await showModalBottomSheet<ImageSource>(
+      context: context,
+      showDragHandle: true,
+      builder: (_) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.photo_camera_rounded),
+              title: const Text('Take a photo'),
+              onTap: () => Navigator.of(context).pop(ImageSource.camera),
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library_rounded),
+              title: const Text('Choose from gallery'),
+              onTap: () => Navigator.of(context).pop(ImageSource.gallery),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (source == null) return;
+
+    final image = await ImagePicker().pickImage(source: source);
+    if (image == null) return;
+    await ref
+        .read(conversionControllerProvider.notifier)
+        .startImageConversion(imagePath: image.path, filename: image.name);
     if (context.mounted) context.goNamed('processing');
   }
 }

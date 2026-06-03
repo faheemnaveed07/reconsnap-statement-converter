@@ -1,5 +1,6 @@
 import '../models/bank.dart';
 import 'classification/document_classifier.dart';
+import 'positioned/positioned_models.dart';
 import 'positioned/positioned_pdf_extractor.dart';
 import 'statement_parser.dart';
 import 'templates/bank_template_registry.dart';
@@ -66,6 +67,13 @@ class TemplatedStatementParser implements StatementParser {
       password: input.password,
     );
 
+    return parseExtracted(doc, input.bank);
+  }
+
+  /// The core: classify → detect bank → bank template (or generic fallback) →
+  /// reconcile. Works on an already-extracted document, so an OCR'd image flows
+  /// through the exact same logic as a digital PDF.
+  ParseResult parseExtracted(ExtractedDocument doc, Bank selectedBank) {
     final classification = _classifier.classify(doc);
     if (classification.kind != DocumentKind.accountStatement &&
         classification.kind != DocumentKind.unknown) {
@@ -75,18 +83,18 @@ class TemplatedStatementParser implements StatementParser {
       );
     }
 
-    final template = _registry.detect(doc, hintBankId: input.bank.id);
+    final template = _registry.detect(doc, hintBankId: selectedBank.id);
 
     // Auto-detect the bank from the statement's own fingerprint: when a template
     // matches, the document's bank wins over the user's manual selection (and the
     // currency follows it).
-    var bank = input.bank;
+    var bank = selectedBank;
     final notes = <String>[];
     if (template != null) {
       final detected = _bankById(template.bankId);
       if (detected != null) {
         bank = detected;
-        if (detected.id != input.bank.id) {
+        if (detected.id != selectedBank.id) {
           notes.add('Auto-detected ${detected.name} from the statement.');
         }
       }
