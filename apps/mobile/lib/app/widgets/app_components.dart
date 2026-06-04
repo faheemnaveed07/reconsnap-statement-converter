@@ -47,7 +47,7 @@ class SoftCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final decorated = Container(
       decoration: BoxDecoration(
-        color: ReconSnapColors.card,
+        gradient: AppGradients.cardSheen,
         borderRadius: AppRadius.all(AppRadius.lg),
         border: Border.all(color: ReconSnapColors.border),
         boxShadow: AppShadows.card,
@@ -97,11 +97,25 @@ class StatusPill extends StatelessWidget {
       PillTone.neutral => (ReconSnapColors.ink700, ReconSnapColors.subtle),
     };
 
+    // Enamel-seal treatment: a soft two-stop fill, a hairline tinted rim, and a
+    // faint same-hue glow so the badge reads as a crafted seal, not a flat tag.
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 6),
       decoration: BoxDecoration(
-        color: bg,
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color.lerp(bg, Colors.white, 0.35)!, bg],
+        ),
         borderRadius: AppRadius.all(AppRadius.pill),
+        border: Border.all(color: fg.withValues(alpha: 0.18)),
+        boxShadow: [
+          BoxShadow(
+            color: fg.withValues(alpha: 0.14),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,

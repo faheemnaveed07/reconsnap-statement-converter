@@ -94,53 +94,107 @@ class _HeroPanel extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         gradient: ReconSnapColors.heroGradient,
-        borderRadius: AppRadius.all(AppRadius.lg),
+        borderRadius: AppRadius.all(AppRadius.xl),
         boxShadow: AppShadows.raised,
       ),
-      padding: const EdgeInsets.all(AppSpacing.xl),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              const StatusPill(
-                label: 'Balance-validated exports',
-                tone: PillTone.success,
-                icon: Icons.verified_rounded,
+      child: ClipRRect(
+        borderRadius: AppRadius.all(AppRadius.xl),
+        child: Stack(
+          children: [
+            // Integrated graphic pattern + radial glow for depth.
+            const Positioned.fill(
+              child: CustomPaint(painter: _HeroPatternPainter()),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(AppSpacing.xl),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const StatusPill(
+                    label: 'Balance-validated exports',
+                    tone: PillTone.success,
+                    icon: Icons.verified_rounded,
+                  ),
+                  const SizedBox(height: AppSpacing.lg),
+                  Text(
+                    'Bank PDFs to accountant-ready files',
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w800,
+                      height: 1.12,
+                      letterSpacing: -0.4,
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                  Text(
+                    'Upload a statement, review extracted rows, run balance checks, and export clean CSV files.',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Colors.white.withValues(alpha: 0.78),
+                      height: 1.45,
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.xl),
+                  DecoratedBox(
+                    decoration: BoxDecoration(
+                      borderRadius: AppRadius.all(AppRadius.md),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.28),
+                          blurRadius: 18,
+                          offset: const Offset(0, 10),
+                        ),
+                      ],
+                    ),
+                    child: ElevatedButton.icon(
+                      onPressed: () => context.pushNamed('upload'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        foregroundColor: ReconSnapColors.ink900,
+                        elevation: 0,
+                      ),
+                      icon: const Icon(Icons.upload_file_rounded),
+                      label: const Text('Convert statement'),
+                    ),
+                  ),
+                ],
               ),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.lg),
-          Text(
-            'Bank PDFs to accountant-ready files',
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-              color: Colors.white,
-              fontWeight: FontWeight.w800,
-              height: 1.12,
             ),
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          Text(
-            'Upload a statement, review extracted rows, run balance checks, and export clean CSV files.',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: Colors.white.withValues(alpha: 0.78),
-              height: 1.45,
-            ),
-          ),
-          const SizedBox(height: AppSpacing.xl),
-          ElevatedButton.icon(
-            onPressed: () => context.pushNamed('upload'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.white,
-              foregroundColor: ReconSnapColors.ink900,
-            ),
-            icon: const Icon(Icons.upload_file_rounded),
-            label: const Text('Convert statement'),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
+}
+
+/// A restrained "integrated graphic pattern": a soft corner glow plus faint
+/// concentric rings — depth without noise, on the navy hero surface.
+class _HeroPatternPainter extends CustomPainter {
+  const _HeroPatternPainter();
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width - 24, 18);
+
+    final glow = Paint()
+      ..shader = RadialGradient(
+        colors: [
+          Colors.white.withValues(alpha: 0.10),
+          Colors.white.withValues(alpha: 0.0),
+        ],
+      ).createShader(Rect.fromCircle(center: center, radius: size.width * 0.7));
+    canvas.drawRect(Offset.zero & size, glow);
+
+    final ring = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1
+      ..color = Colors.white.withValues(alpha: 0.06);
+    for (final r in [60.0, 110.0, 168.0, 232.0]) {
+      canvas.drawCircle(center, r, ring);
+    }
+  }
+
+  @override
+  bool shouldRepaint(_HeroPatternPainter oldDelegate) => false;
 }
 
 class _TrustRow extends StatelessWidget {
@@ -167,18 +221,22 @@ class _CreditPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     return SoftCard(
       padding: const EdgeInsets.all(AppSpacing.lg),
+      onTap: () => context.pushNamed('paywall'),
       child: Row(
         children: [
+          // Brand-gradient seal — the premium-tier marker.
           Container(
-            width: 42,
-            height: 42,
+            width: 46,
+            height: 46,
             decoration: BoxDecoration(
-              color: ReconSnapColors.successSurface,
-              borderRadius: AppRadius.all(AppRadius.sm),
+              gradient: ReconSnapColors.heroGradient,
+              borderRadius: AppRadius.all(AppRadius.md),
+              boxShadow: AppShadows.soft,
             ),
             child: const Icon(
               Icons.workspace_premium_rounded,
-              color: ReconSnapColors.accentGreenDark,
+              color: Colors.white,
+              size: 22,
             ),
           ),
           const SizedBox(width: AppSpacing.md),
@@ -186,21 +244,29 @@ class _CreditPanel extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  '${starterPlan.name} preview',
-                  style: Theme.of(context).textTheme.titleSmall,
+                Row(
+                  children: [
+                    Text(
+                      '${starterPlan.name} plan',
+                      style: Theme.of(context).textTheme.titleSmall,
+                    ),
+                    const SizedBox(width: AppSpacing.sm),
+                    const StatusPill(label: 'Preview', tone: PillTone.info),
+                  ],
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: 3),
                 Text(
-                  '${starterPlan.pageAllowance} pages/month planned for ${starterPlan.monthlyPriceLabel}',
+                  '${starterPlan.pageAllowance} pages/month · ${starterPlan.monthlyPriceLabel}',
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
               ],
             ),
           ),
-          const Icon(
-            Icons.chevron_right_rounded,
-            color: ReconSnapColors.ink400,
+          const SizedBox(width: AppSpacing.sm),
+          const StatusPill(
+            label: 'Upgrade',
+            tone: PillTone.success,
+            icon: Icons.arrow_forward_rounded,
           ),
         ],
       ),

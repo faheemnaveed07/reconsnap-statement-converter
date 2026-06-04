@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import 'app_tokens.dart';
 
@@ -57,9 +58,11 @@ class ReconSnapTheme {
       useMaterial3: true,
       colorScheme: scheme,
       scaffoldBackgroundColor: ReconSnapColors.surface,
-      fontFamily: 'Roboto',
+      fontFamily: GoogleFonts.manrope().fontFamily,
       splashFactory: InkSparkle.splashFactory,
-      textTheme: _textTheme,
+      // Manrope: a geometric, premium fintech sans. Applied over the calibrated
+      // size/weight scale below so hierarchy stays intact.
+      textTheme: GoogleFonts.manropeTextTheme(_textTheme),
       appBarTheme: const AppBarTheme(
         elevation: 0,
         scrolledUnderElevation: 0,
@@ -89,7 +92,10 @@ class ReconSnapTheme {
           foregroundColor: Colors.white,
           disabledBackgroundColor: ReconSnapColors.ink400,
           minimumSize: const Size.fromHeight(54),
-          elevation: 0,
+          // Tactile, not flat: a tinted shadow so the primary action reads as a
+          // raised, pressable surface.
+          elevation: 4,
+          shadowColor: ReconSnapColors.ink.withValues(alpha: 0.45),
           textStyle: const TextStyle(
             fontSize: 15,
             fontWeight: FontWeight.w700,

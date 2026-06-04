@@ -31,16 +31,45 @@ class AppRadius {
 }
 
 /// Soft, layered shadows tuned for a light fintech surface — deliberately
-/// subtle so the UI reads as calm and precise rather than heavy.
+/// subtle so the UI reads as calm and precise rather than heavy. Premium depth
+/// comes from *stacking* a tight contact shadow under a wide ambient one.
 class AppShadows {
   const AppShadows._();
 
-  static const List<BoxShadow> card = [
-    BoxShadow(color: Color(0x0F101828), blurRadius: 2, offset: Offset(0, 1)),
-    BoxShadow(color: Color(0x14101828), blurRadius: 16, offset: Offset(0, 8)),
+  /// Pills / small chips — a single whisper-soft shadow.
+  static const List<BoxShadow> soft = [
+    BoxShadow(color: Color(0x0D101828), blurRadius: 8, offset: Offset(0, 2)),
   ];
 
-  static const List<BoxShadow> raised = [
-    BoxShadow(color: Color(0x1A101828), blurRadius: 28, offset: Offset(0, 14)),
+  /// Primary content cards: a crisp contact shadow + a soft ambient lift.
+  static const List<BoxShadow> card = [
+    BoxShadow(color: Color(0x0F1A2540), blurRadius: 1, offset: Offset(0, 1)),
+    BoxShadow(color: Color(0x0F1A2540), blurRadius: 3, offset: Offset(0, 2)),
+    BoxShadow(color: Color(0x141A2540), blurRadius: 24, offset: Offset(0, 12)),
   ];
+
+  /// Tactile buttons — a tinted, directional shadow so they read as pressable.
+  static const List<BoxShadow> button = [
+    BoxShadow(color: Color(0x2B0B1B2B), blurRadius: 16, offset: Offset(0, 8)),
+    BoxShadow(color: Color(0x140B1B2B), blurRadius: 2, offset: Offset(0, 1)),
+  ];
+
+  /// Hero / elevated surfaces.
+  static const List<BoxShadow> raised = [
+    BoxShadow(color: Color(0x24101828), blurRadius: 36, offset: Offset(0, 18)),
+    BoxShadow(color: Color(0x0F101828), blurRadius: 2, offset: Offset(0, 1)),
+  ];
+}
+
+/// Subtle overlay gradients that give flat surfaces depth without colour shifts.
+class AppGradients {
+  const AppGradients._();
+
+  /// A faint top-down sheen for white cards — the "inner glow" that lifts a
+  /// flat surface just enough to feel crafted.
+  static const LinearGradient cardSheen = LinearGradient(
+    begin: Alignment.topCenter,
+    end: Alignment.bottomCenter,
+    colors: [Color(0xFFFFFFFF), Color(0xFFFBFCFE)],
+  );
 }
