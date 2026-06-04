@@ -148,8 +148,8 @@ class _HeroPanel extends StatelessWidget {
                     child: ElevatedButton.icon(
                       onPressed: () => context.pushNamed('upload'),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.white,
-                        foregroundColor: ReconSnapColors.ink900,
+                        backgroundColor: ReconSnapColors.gold,
+                        foregroundColor: ReconSnapColors.ink,
                         elevation: 0,
                       ),
                       icon: const Icon(Icons.upload_file_rounded),
@@ -178,8 +178,8 @@ class _HeroPatternPainter extends CustomPainter {
     final glow = Paint()
       ..shader = RadialGradient(
         colors: [
-          Colors.white.withValues(alpha: 0.10),
-          Colors.white.withValues(alpha: 0.0),
+          ReconSnapColors.goldSoft.withValues(alpha: 0.14),
+          ReconSnapColors.goldSoft.withValues(alpha: 0.0),
         ],
       ).createShader(Rect.fromCircle(center: center, radius: size.width * 0.7));
     canvas.drawRect(Offset.zero & size, glow);
@@ -187,7 +187,7 @@ class _HeroPatternPainter extends CustomPainter {
     final ring = Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1
-      ..color = Colors.white.withValues(alpha: 0.06);
+      ..color = ReconSnapColors.goldSoft.withValues(alpha: 0.10);
     for (final r in [60.0, 110.0, 168.0, 232.0]) {
       canvas.drawCircle(center, r, ring);
     }
@@ -224,18 +224,18 @@ class _CreditPanel extends StatelessWidget {
       onTap: () => context.pushNamed('paywall'),
       child: Row(
         children: [
-          // Brand-gradient seal — the premium-tier marker.
+          // Gold seal — the premium-tier marker.
           Container(
             width: 46,
             height: 46,
             decoration: BoxDecoration(
-              gradient: ReconSnapColors.heroGradient,
+              gradient: ReconSnapColors.goldGradient,
               borderRadius: AppRadius.all(AppRadius.md),
               boxShadow: AppShadows.soft,
             ),
             child: const Icon(
               Icons.workspace_premium_rounded,
-              color: Colors.white,
+              color: ReconSnapColors.ink,
               size: 22,
             ),
           ),

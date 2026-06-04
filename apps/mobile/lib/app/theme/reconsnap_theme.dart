@@ -3,65 +3,83 @@ import 'package:google_fonts/google_fonts.dart';
 
 import 'app_tokens.dart';
 
-/// ReconSnap brand palette.
+/// ReconSnap brand palette — **dark executive** edition.
 ///
-/// A restrained fintech system: a deep ink/navy brand colour, a single trust
-/// green for success/validation, and a calibrated neutral scale for text,
-/// borders, and surfaces. Semantic colours (amber/red) are reserved for
-/// warnings and risk so they carry real meaning in the UI.
+/// A deep charcoal-navy canvas, silver/white text, and a single refined **gold**
+/// accent reserved for primary actions and trust seals. Validation green is kept
+/// as a *semantic* colour (reconciled / passed); amber and red stay for warning
+/// and risk. Gold is used sparingly so the system reads premium, not gaudy.
 class ReconSnapColors {
-  // Brand
-  static const ink = Color(0xFF0B1B2B); // primary brand / headings
-  static const inkSoft = Color(0xFF1D2F40); // gradient partner
-  static const accentGreen = Color(0xFF0E9F6E);
-  static const accentGreenDark = Color(0xFF057A52);
-  static const actionBlue = Color(0xFF2563EB);
+  // Brand navy (hero / seals / brand mark)
+  static const ink = Color(0xFF0E1726);
+  static const inkSoft = Color(0xFF1B2A44);
 
-  // Neutrals
-  static const ink900 = Color(0xFF0B1B2B);
-  static const ink700 = Color(0xFF334155);
-  static const mutedInk = Color(0xFF64748B);
-  static const ink400 = Color(0xFF94A3B8);
-  static const border = Color(0xFFE6EBF1);
-  static const subtle = Color(0xFFEEF2F6);
-  static const surface = Color(0xFFF6F8FB);
-  static const card = Color(0xFFFFFFFF);
+  // Premium accent
+  static const gold = Color(0xFFCBA35A);
+  static const goldSoft = Color(0xFFE3C485);
 
-  // Semantic
-  static const warningAmber = Color(0xFFB7791F);
-  static const warningSurface = Color(0xFFFEF6E7);
-  static const riskRed = Color(0xFFD92D20);
-  static const riskSurface = Color(0xFFFEF1F0);
-  static const successSurface = Color(0xFFE7F7F0);
+  // Validation / semantic
+  static const accentGreen = Color(0xFF34D399);
+  static const accentGreenDark = Color(0xFF34D399);
+  static const actionBlue = Color(0xFF6AA8FF);
+
+  // Text scale (light on dark)
+  static const ink900 = Color(0xFFEEF3F9); // primary text / headings
+  static const ink700 = Color(0xFFB8C4D4); // secondary text / icons
+  static const mutedInk = Color(0xFF8A99AD); // body / captions
+  static const ink400 = Color(0xFF5C6B82); // faint / chevrons
+
+  // Surfaces
+  static const surface = Color(0xFF0A0F1A); // scaffold canvas
+  static const card = Color(0xFF131C2B); // elevated card
+  static const subtle = Color(0xFF1A2333); // chips / inset blocks
+  static const border = Color(0xFF273247); // hairline
+
+  // Semantic surfaces (dark tints)
+  static const warningAmber = Color(0xFFE0A93B);
+  static const warningSurface = Color(0xFF2A2210);
+  static const riskRed = Color(0xFFF26B66);
+  static const riskSurface = Color(0xFF2A1514);
+  static const successSurface = Color(0xFF0F2A20);
+  static const infoSurface = Color(0xFF13233F);
 
   static const heroGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
     colors: [ink, inkSoft],
   );
+
+  /// Reserved for premium accents (seals, the upgrade marker).
+  static const goldGradient = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [goldSoft, gold],
+  );
 }
 
 class ReconSnapTheme {
-  static ThemeData get light {
-    final scheme = ColorScheme.fromSeed(
-      seedColor: ReconSnapColors.accentGreen,
-      primary: ReconSnapColors.ink,
-      onPrimary: Colors.white,
+  static ThemeData get light => dark; // single source; app uses the dark system
+
+  static ThemeData get dark {
+    const scheme = ColorScheme.dark(
+      primary: ReconSnapColors.gold,
+      onPrimary: ReconSnapColors.ink,
       secondary: ReconSnapColors.accentGreen,
+      onSecondary: ReconSnapColors.ink,
       surface: ReconSnapColors.card,
       onSurface: ReconSnapColors.ink900,
       error: ReconSnapColors.riskRed,
-      brightness: Brightness.light,
+      onError: ReconSnapColors.ink,
     );
 
     return ThemeData(
       useMaterial3: true,
+      brightness: Brightness.dark,
       colorScheme: scheme,
       scaffoldBackgroundColor: ReconSnapColors.surface,
       fontFamily: GoogleFonts.manrope().fontFamily,
       splashFactory: InkSparkle.splashFactory,
-      // Manrope: a geometric, premium fintech sans. Applied over the calibrated
-      // size/weight scale below so hierarchy stays intact.
+      // Manrope over the calibrated size/weight scale below; hierarchy intact.
       textTheme: GoogleFonts.manropeTextTheme(_textTheme),
       appBarTheme: const AppBarTheme(
         elevation: 0,
@@ -88,17 +106,18 @@ class ReconSnapTheme {
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: ReconSnapColors.ink,
-          foregroundColor: Colors.white,
-          disabledBackgroundColor: ReconSnapColors.ink400,
+          // Gold primary action = the executive accent, used everywhere a
+          // primary CTA appears. Dark navy text keeps AA contrast on gold.
+          backgroundColor: ReconSnapColors.gold,
+          foregroundColor: ReconSnapColors.ink,
+          disabledBackgroundColor: ReconSnapColors.border,
+          disabledForegroundColor: ReconSnapColors.ink400,
           minimumSize: const Size.fromHeight(54),
-          // Tactile, not flat: a tinted shadow so the primary action reads as a
-          // raised, pressable surface.
           elevation: 4,
-          shadowColor: ReconSnapColors.ink.withValues(alpha: 0.45),
+          shadowColor: ReconSnapColors.gold.withValues(alpha: 0.45),
           textStyle: const TextStyle(
             fontSize: 15,
-            fontWeight: FontWeight.w700,
+            fontWeight: FontWeight.w800,
             letterSpacing: 0.1,
           ),
           shape: RoundedRectangleBorder(
@@ -109,14 +128,14 @@ class ReconSnapTheme {
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
           foregroundColor: ReconSnapColors.ink900,
-          backgroundColor: Colors.white,
+          backgroundColor: ReconSnapColors.card,
           minimumSize: const Size.fromHeight(52),
           textStyle: const TextStyle(
             fontSize: 15,
             fontWeight: FontWeight.w700,
             letterSpacing: 0.1,
           ),
-          side: const BorderSide(color: ReconSnapColors.border, width: 1.4),
+          side: const BorderSide(color: ReconSnapColors.border, width: 1.2),
           shape: RoundedRectangleBorder(
             borderRadius: AppRadius.all(AppRadius.md),
           ),
@@ -124,13 +143,13 @@ class ReconSnapTheme {
       ),
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
-          foregroundColor: ReconSnapColors.actionBlue,
+          foregroundColor: ReconSnapColors.goldSoft,
           textStyle: const TextStyle(fontWeight: FontWeight.w700),
         ),
       ),
       chipTheme: ChipThemeData(
         backgroundColor: ReconSnapColors.subtle,
-        selectedColor: ReconSnapColors.ink,
+        selectedColor: ReconSnapColors.gold,
         side: BorderSide.none,
         labelStyle: const TextStyle(
           color: ReconSnapColors.ink700,
@@ -156,10 +175,10 @@ class ReconSnapTheme {
       ),
       snackBarTheme: SnackBarThemeData(
         behavior: SnackBarBehavior.floating,
-        backgroundColor: ReconSnapColors.ink900,
+        backgroundColor: ReconSnapColors.inkSoft,
         contentTextStyle: const TextStyle(
-          color: Colors.white,
-          fontWeight: FontWeight.w500,
+          color: ReconSnapColors.ink900,
+          fontWeight: FontWeight.w600,
         ),
         shape: RoundedRectangleBorder(
           borderRadius: AppRadius.all(AppRadius.md),
@@ -167,7 +186,7 @@ class ReconSnapTheme {
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: Colors.white,
+        fillColor: ReconSnapColors.card,
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 16,
           vertical: 16,
@@ -183,10 +202,7 @@ class ReconSnapTheme {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: AppRadius.all(AppRadius.md),
-          borderSide: const BorderSide(
-            color: ReconSnapColors.actionBlue,
-            width: 1.6,
-          ),
+          borderSide: const BorderSide(color: ReconSnapColors.gold, width: 1.6),
         ),
       ),
     );

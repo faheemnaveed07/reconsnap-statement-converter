@@ -65,11 +65,11 @@ class AppShadows {
 class AppGradients {
   const AppGradients._();
 
-  /// A faint top-down sheen for white cards — the "inner glow" that lifts a
-  /// flat surface just enough to feel crafted.
+  /// A faint top-down sheen for elevated dark cards — a subtle inner glow that
+  /// lifts the surface off the canvas just enough to feel crafted.
   static const LinearGradient cardSheen = LinearGradient(
     begin: Alignment.topCenter,
     end: Alignment.bottomCenter,
-    colors: [Color(0xFFFFFFFF), Color(0xFFFBFCFE)],
+    colors: [Color(0xFF17212F), Color(0xFF121A28)],
   );
 }

@@ -93,7 +93,10 @@ class StatusPill extends StatelessWidget {
         ReconSnapColors.warningSurface,
       ),
       PillTone.danger => (ReconSnapColors.riskRed, ReconSnapColors.riskSurface),
-      PillTone.info => (ReconSnapColors.actionBlue, Color(0xFFEAF1FE)),
+      PillTone.info => (
+        ReconSnapColors.actionBlue,
+        ReconSnapColors.infoSurface,
+      ),
       PillTone.neutral => (ReconSnapColors.ink700, ReconSnapColors.subtle),
     };
 
