@@ -14,8 +14,11 @@ void main() {
       ),
     );
 
-    expect(find.text('Bank PDFs to accountant-ready files'), findsOneWidget);
-    expect(find.text('Convert statement'), findsOneWidget);
+    expect(
+      find.text('Turn a bank statement into clean, checked data.'),
+      findsOneWidget,
+    );
+    expect(find.text('Convert a statement'), findsOneWidget);
   });
 
   testWidgets('shows onboarding on first run', (tester) async {

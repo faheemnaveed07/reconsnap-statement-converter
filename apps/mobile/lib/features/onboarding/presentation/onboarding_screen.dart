@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../app/copy/trust_copy.dart';
 import '../../../app/theme/app_tokens.dart';
 import '../../../app/theme/reconsnap_theme.dart';
 import '../../../app/widgets/app_components.dart';
 import '../../../core/services/first_run_store.dart';
+import '../../conversion/presentation/conversion_controller.dart';
 
 final firstRunStoreProvider = Provider((ref) => FirstRunStore());
 
@@ -40,16 +42,11 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       'Convert statements to CSV, Excel, QuickBooks/Xero and OFX in seconds.',
     ),
     _Slide(
-      Icons.shield_outlined,
-      'Private by design',
-      'Statements are processed entirely on your device and never uploaded.',
-    ),
-    _Slide(
       Icons.fact_check_outlined,
-      'Validated, not guessed',
-      'Every row is checked against the running balance, and anything uncertain '
-          'is flagged for your review before export.',
+      'Checked, not guessed',
+      TrustCopy.reconcileGuarantee,
     ),
+    _Slide(Icons.shield_outlined, 'Private by design', TrustCopy.oneLine),
   ];
 
   @override
@@ -60,7 +57,18 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 
   Future<void> _finish() async {
     await ref.read(firstRunStoreProvider).markSeen();
-    if (mounted) context.goNamed('home');
+    if (mounted) context.go('/');
+  }
+
+  /// Lead with proof: run the sample conversion and drop the user straight into
+  /// a real, reconciled Result — the strongest possible first impression.
+  Future<void> _finishWithDemo() async {
+    await ref.read(firstRunStoreProvider).markSeen();
+    await ref.read(conversionControllerProvider.notifier).startMockConversion();
+    if (mounted) {
+      context.go('/');
+      context.pushNamed('processing');
+    }
   }
 
   @override
@@ -106,6 +114,13 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                   child: Text(isLast ? 'Get started' : 'Next'),
                 ),
               ),
+              if (isLast) ...[
+                const SizedBox(height: AppSpacing.xs),
+                TextButton(
+                  onPressed: _finishWithDemo,
+                  child: const Text('See a sample result first'),
+                ),
+              ],
             ],
           ),
         ),

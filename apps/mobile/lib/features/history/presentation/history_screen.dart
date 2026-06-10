@@ -8,6 +8,7 @@ import '../../../app/theme/reconsnap_theme.dart';
 import '../../../app/widgets/app_components.dart';
 import '../../../core/models/conversion_job.dart';
 import '../../conversion/presentation/conversion_controller.dart';
+import '../../conversion/presentation/result_summary.dart';
 
 class HistoryScreen extends ConsumerWidget {
   const HistoryScreen({super.key});
@@ -22,35 +23,66 @@ class HistoryScreen extends ConsumerWidget {
       appBar: AppBar(title: const Text('Conversion history')),
       body: SafeArea(
         child: history.isEmpty
-            ? _Empty()
-            : ListView.separated(
+            ? const _Empty()
+            : ListView(
                 padding: AppSpacing.page,
-                itemCount: history.length,
-                separatorBuilder: (_, _) =>
-                    const SizedBox(height: AppSpacing.md),
-                itemBuilder: (context, i) => _HistoryTile(
-                  job: history[i],
-                  onTap: () {
-                    ref
-                        .read(conversionControllerProvider.notifier)
-                        .openJob(history[i]);
-                    context.pushNamed('validation');
-                  },
-                ),
+                children: [
+                  for (final group in _groupByMonth(history)) ...[
+                    Padding(
+                      padding: const EdgeInsets.only(
+                        top: AppSpacing.sm,
+                        bottom: AppSpacing.sm,
+                      ),
+                      child: Eyebrow(group.label),
+                    ),
+                    for (final job in group.jobs) ...[
+                      _HistoryTile(
+                        job: job,
+                        onTap: () {
+                          ref
+                              .read(conversionControllerProvider.notifier)
+                              .openJob(job);
+                          context.pushNamed('validation');
+                        },
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+                    ],
+                  ],
+                ],
               ),
       ),
     );
   }
+
+  /// Groups conversions into month buckets (newest first) so History reads as a
+  /// workspace, not a flat log. Re-opening any job lets the user re-export from
+  /// the Result without re-converting.
+  static List<_MonthGroup> _groupByMonth(List<ConversionJob> jobs) {
+    final groups = <String, _MonthGroup>{};
+    for (final job in jobs) {
+      final key = DateFormat('MMMM yyyy').format(job.createdAt);
+      (groups[key] ??= _MonthGroup(key)).jobs.add(job);
+    }
+    return groups.values.toList();
+  }
 }
 
-class _Empty extends StatelessWidget {
+class _MonthGroup {
+  _MonthGroup(this.label);
+  final String label;
+  final List<ConversionJob> jobs = [];
+}
+
+class _Empty extends ConsumerWidget {
+  const _Empty();
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return ListView(
       padding: AppSpacing.page,
       children: [
         SoftCard(
-          padding: const EdgeInsets.all(AppSpacing.xxl),
+          padding: const EdgeInsets.all(AppSpacing.xl),
           child: Column(
             children: [
               Container(
@@ -73,9 +105,25 @@ class _Empty extends StatelessWidget {
               ),
               const SizedBox(height: AppSpacing.xs),
               Text(
-                'Convert a statement to see it here with its validation status and exports.',
+                'Convert a statement to see it here with its verdict and exports — '
+                'or take the sample for a spin first.',
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.bodyMedium,
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              ElevatedButton(
+                onPressed: () => context.pushNamed('upload'),
+                child: const Text('Convert a statement'),
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              TextButton(
+                onPressed: () async {
+                  await ref
+                      .read(conversionControllerProvider.notifier)
+                      .startMockConversion();
+                  if (context.mounted) context.pushNamed('processing');
+                },
+                child: const Text('See a sample result'),
               ),
             ],
           ),
@@ -93,7 +141,7 @@ class _HistoryTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final passed = job.validationReport.isPassed;
+    final reconciled = job.fullyReconciled;
 
     return SoftCard(
       padding: const EdgeInsets.all(AppSpacing.lg),
@@ -125,7 +173,7 @@ class _HistoryTile extends StatelessWidget {
                 ),
                 const SizedBox(height: 3),
                 Text(
-                  '${job.bank.name} · ${job.transactions.length} rows · ${DateFormat('d MMM').format(job.createdAt)}',
+                  '${job.bank.name} · ${job.verdictLabel} · ${DateFormat('d MMM').format(job.createdAt)}',
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
               ],
@@ -133,8 +181,8 @@ class _HistoryTile extends StatelessWidget {
           ),
           const SizedBox(width: AppSpacing.sm),
           StatusPill(
-            label: passed ? 'Validated' : 'Review',
-            tone: passed ? PillTone.success : PillTone.warning,
+            label: reconciled ? 'Reconciled' : 'Review',
+            tone: reconciled ? PillTone.success : PillTone.warning,
           ),
         ],
       ),

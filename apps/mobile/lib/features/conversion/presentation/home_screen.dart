@@ -2,13 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../app/copy/trust_copy.dart';
 import '../../../app/theme/app_tokens.dart';
 import '../../../app/theme/reconsnap_theme.dart';
 import '../../../app/widgets/app_components.dart';
+import '../../../core/models/bank.dart';
 import '../../../core/models/conversion_job.dart';
-import '../../../core/models/subscription_plan.dart';
+import '../../billing/presentation/entitlements_controller.dart';
 import 'conversion_controller.dart';
+import 'result_summary.dart';
 
+/// Home — the start surface. It has exactly one job: get a real statement into
+/// the converter, and reassure with *true* signals on the way. No dashboard, no
+/// fabricated metrics, no decorative bento. Hierarchy comes from the editorial
+/// headline, white space, and one ink CTA.
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
 
@@ -17,68 +24,72 @@ class HomeScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(conversionControllerProvider);
+    final entitlements = ref.watch(entitlementsProvider);
+    final lastResult = state.history.isEmpty ? null : state.history.first;
 
     return Scaffold(
       appBar: AppBar(
-        titleSpacing: 20,
-        title: Row(
-          children: [
-            const BrandMark(size: 30, radius: AppRadius.sm),
-            const SizedBox(width: 10),
-            Text(
-              'ReconSnap',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w800,
-                letterSpacing: -0.2,
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          IconButton(
-            tooltip: 'History',
-            onPressed: () => context.pushNamed('history'),
-            icon: const Icon(Icons.history_rounded),
-          ),
-          IconButton(
-            tooltip: 'Settings',
-            onPressed: () => context.pushNamed('settings'),
-            icon: const Icon(Icons.tune_rounded),
-          ),
-          const SizedBox(width: 6),
-        ],
+        titleSpacing: AppSpacing.gutter,
+        title: const Wordmark(fontSize: 22),
       ),
       body: SafeArea(
         child: ListView(
-          padding: AppSpacing.page,
+          padding: const EdgeInsets.fromLTRB(24, 24, 24, 40),
           children: [
-            const _HeroPanel(),
-            const SizedBox(height: AppSpacing.md),
-            const _TrustRow(),
-            const SizedBox(height: AppSpacing.md),
-            const _CreditPanel(),
-            const SizedBox(height: AppSpacing.xxl),
-            SectionHeader(
-              title: 'Recent conversions',
-              action: state.history.isEmpty
-                  ? null
-                  : TextButton(
-                      onPressed: () => context.pushNamed('history'),
-                      child: const Text('See all'),
-                    ),
+            const SizedBox(height: AppSpacing.sm),
+            // 2 — display headline, plain and true.
+            Text(
+              'Turn a bank statement into clean, checked data.',
+              style: Theme.of(context).textTheme.displaySmall,
             ),
             const SizedBox(height: AppSpacing.md),
-            if (state.history.isEmpty)
-              const _EmptyHistory()
-            else
-              ...state.history
-                  .take(4)
-                  .map(
-                    (job) => Padding(
-                      padding: const EdgeInsets.only(bottom: AppSpacing.md),
-                      child: _HistoryTile(job: job),
-                    ),
-                  ),
+            // 3 — the guarantee, stated accurately.
+            Text(
+              TrustCopy.reconcileGuarantee,
+              style: Theme.of(context).textTheme.bodyLarge,
+            ),
+            const SizedBox(height: AppSpacing.xl),
+            // 4 — one primary CTA, one quiet secondary link.
+            ElevatedButton(
+              onPressed: () => context.pushNamed('upload'),
+              child: const Text('Convert a statement'),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            Center(
+              child: TextButton(
+                onPressed: () {
+                  ref
+                      .read(conversionControllerProvider.notifier)
+                      .startMockConversion();
+                  context.pushNamed('processing');
+                },
+                child: const Text('Try it with sample data'),
+              ),
+            ),
+            const SizedBox(height: AppSpacing.xl),
+            // 5 — real status line: conversions remaining + last true verdict.
+            _StatusLine(
+              creditsLabel: entitlements.isPro
+                  ? 'Unlimited conversions'
+                  : '${entitlements.availableCredits} '
+                        '${entitlements.availableCredits == 1 ? 'conversion' : 'conversions'} remaining',
+              lastResult: lastResult,
+            ),
+            const SizedBox(height: AppSpacing.xl),
+            // 6 — supported banks, stated honestly.
+            _SupportedBanksLine(onTap: () => _showSupportedBanks(context)),
+            if (state.history.length > 1) ...[
+              const SizedBox(height: AppSpacing.xl),
+              SectionHeader(
+                title: 'Recent conversions',
+                action: TextButton(
+                  onPressed: () => context.pushNamed('history'),
+                  child: const Text('View all'),
+                ),
+              ),
+              const SizedBox(height: AppSpacing.md),
+              _RecentList(jobs: state.history.skip(1).take(3).toList()),
+            ],
           ],
         ),
       ),
@@ -86,79 +97,193 @@ class HomeScreen extends ConsumerWidget {
   }
 }
 
-class _HeroPanel extends StatelessWidget {
-  const _HeroPanel();
+void _showSupportedBanks(BuildContext context) {
+  showModalBottomSheet<void>(
+    context: context,
+    showDragHandle: true,
+    builder: (context) => SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Supported banks',
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              'More are added as we validate each template. Tell us which to '
+              'add next from Account → Request a bank.',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+            const SizedBox(height: AppSpacing.md),
+            for (final bank in launchBanks)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 6),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        bank.name,
+                        style: Theme.of(context).textTheme.titleSmall,
+                      ),
+                    ),
+                    StatusPill(
+                      label: bank.supportLevel.label,
+                      tone: bank.supportLevel.tone,
+                    ),
+                  ],
+                ),
+              ),
+          ],
+        ),
+      ),
+    ),
+  );
+}
+
+/// Honest bank maturity, mapped to the trust traffic-light.
+extension BankSupportLabel on BankSupportLevel {
+  String get label => switch (this) {
+    BankSupportLevel.templateReady => 'Template ready',
+    BankSupportLevel.beta => 'Beta',
+    BankSupportLevel.requested => 'Requested',
+  };
+
+  PillTone get tone => switch (this) {
+    BankSupportLevel.templateReady => PillTone.success,
+    BankSupportLevel.beta => PillTone.warning,
+    BankSupportLevel.requested => PillTone.neutral,
+  };
+}
+
+class _SupportedBanksLine extends StatelessWidget {
+  const _SupportedBanksLine({required this.onTap});
+
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        gradient: ReconSnapColors.heroGradient,
-        borderRadius: AppRadius.all(AppRadius.xl),
-        boxShadow: AppShadows.raised,
-      ),
-      child: ClipRRect(
-        borderRadius: AppRadius.all(AppRadius.xl),
-        child: Stack(
+    final ready = launchBanks
+        .where((b) => b.supportLevel != BankSupportLevel.requested)
+        .length;
+    return InkWell(
+      onTap: onTap,
+      borderRadius: AppRadius.all(AppRadius.sm),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: Row(
           children: [
-            // Integrated graphic pattern + radial glow for depth.
-            const Positioned.fill(
-              child: CustomPaint(painter: _HeroPatternPainter()),
+            const Icon(
+              Icons.account_balance_outlined,
+              size: 18,
+              color: ReconSnapColors.mutedInk,
             ),
-            Padding(
-              padding: const EdgeInsets.all(AppSpacing.xl),
+            const SizedBox(width: AppSpacing.sm),
+            Expanded(
+              child: Text(
+                '$ready UAE banks live, more added as we validate each template.',
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+            ),
+            const Icon(
+              Icons.chevron_right_rounded,
+              size: 20,
+              color: ReconSnapColors.ink400,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Real status: conversions remaining, and the last result as one tappable row
+/// carrying its *true* verdict (or hidden when there's nothing yet).
+class _StatusLine extends StatelessWidget {
+  const _StatusLine({required this.creditsLabel, required this.lastResult});
+
+  final String creditsLabel;
+  final ConversionJob? lastResult;
+
+  @override
+  Widget build(BuildContext context) {
+    return SoftCard(
+      padding: EdgeInsets.zero,
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(AppSpacing.md),
+            child: Row(
+              children: [
+                const Eyebrow('Your plan'),
+                const Spacer(),
+                MonoText(
+                  creditsLabel,
+                  fontSize: 12,
+                  color: ReconSnapColors.ink700,
+                ),
+              ],
+            ),
+          ),
+          if (lastResult != null) ...[
+            const Divider(height: 1, color: ReconSnapColors.border),
+            _LastResultRow(job: lastResult!),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _LastResultRow extends ConsumerWidget {
+  const _LastResultRow({required this.job});
+
+  final ConversionJob job;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final reconciled = job.fullyReconciled;
+    return InkWell(
+      onTap: () {
+        ref.read(conversionControllerProvider.notifier).openJob(job);
+        context.pushNamed('validation');
+      },
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        child: Row(
+          children: [
+            Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const StatusPill(
-                    label: 'Balance-validated exports',
-                    tone: PillTone.success,
-                    icon: Icons.verified_rounded,
-                  ),
-                  const SizedBox(height: AppSpacing.lg),
                   Text(
-                    'Bank PDFs to accountant-ready files',
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w800,
-                      height: 1.12,
-                      letterSpacing: -0.4,
-                    ),
+                    'Last conversion · ${job.filename}',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.bodySmall,
                   ),
-                  const SizedBox(height: AppSpacing.sm),
+                  const SizedBox(height: 3),
                   Text(
-                    'Upload a statement, review extracted rows, run balance checks, and export clean CSV files.',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Colors.white.withValues(alpha: 0.78),
-                      height: 1.45,
-                    ),
-                  ),
-                  const SizedBox(height: AppSpacing.xl),
-                  DecoratedBox(
-                    decoration: BoxDecoration(
-                      borderRadius: AppRadius.all(AppRadius.md),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.28),
-                          blurRadius: 18,
-                          offset: const Offset(0, 10),
-                        ),
-                      ],
-                    ),
-                    child: ElevatedButton.icon(
-                      onPressed: () => context.pushNamed('upload'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: ReconSnapColors.gold,
-                        foregroundColor: ReconSnapColors.ink,
-                        elevation: 0,
-                      ),
-                      icon: const Icon(Icons.upload_file_rounded),
-                      label: const Text('Convert statement'),
+                    job.verdictLabel,
+                    style: ReconSnapTheme.mono(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: reconciled
+                          ? ReconSnapColors.mossDeep
+                          : ReconSnapColors.ochre,
                     ),
                   ),
                 ],
               ),
             ),
+            StatusPill(
+              label: reconciled ? 'Reconciled' : 'Needs review',
+              tone: reconciled ? PillTone.success : PillTone.warning,
+              icon: reconciled ? Icons.check_rounded : null,
+            ),
           ],
         ),
       ),
@@ -166,204 +291,69 @@ class _HeroPanel extends StatelessWidget {
   }
 }
 
-/// A restrained "integrated graphic pattern": a soft corner glow plus faint
-/// concentric rings — depth without noise, on the navy hero surface.
-class _HeroPatternPainter extends CustomPainter {
-  const _HeroPatternPainter();
+class _RecentList extends ConsumerWidget {
+  const _RecentList({required this.jobs});
+
+  final List<ConversionJob> jobs;
 
   @override
-  void paint(Canvas canvas, Size size) {
-    final center = Offset(size.width - 24, 18);
-
-    final glow = Paint()
-      ..shader = RadialGradient(
-        colors: [
-          ReconSnapColors.goldSoft.withValues(alpha: 0.14),
-          ReconSnapColors.goldSoft.withValues(alpha: 0.0),
-        ],
-      ).createShader(Rect.fromCircle(center: center, radius: size.width * 0.7));
-    canvas.drawRect(Offset.zero & size, glow);
-
-    final ring = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1
-      ..color = ReconSnapColors.goldSoft.withValues(alpha: 0.10);
-    for (final r in [60.0, 110.0, 168.0, 232.0]) {
-      canvas.drawCircle(center, r, ring);
-    }
-  }
-
-  @override
-  bool shouldRepaint(_HeroPatternPainter oldDelegate) => false;
-}
-
-class _TrustRow extends StatelessWidget {
-  const _TrustRow();
-
-  @override
-  Widget build(BuildContext context) {
-    return const Wrap(
-      spacing: AppSpacing.sm,
-      runSpacing: AppSpacing.sm,
-      children: [
-        StatusPill(label: 'Balance validation', icon: Icons.fact_check_rounded),
-        StatusPill(label: 'Password PDFs', icon: Icons.lock_outline_rounded),
-        StatusPill(label: 'Editable review', icon: Icons.edit_note_rounded),
-      ],
-    );
-  }
-}
-
-class _CreditPanel extends StatelessWidget {
-  const _CreditPanel();
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return SoftCard(
-      padding: const EdgeInsets.all(AppSpacing.lg),
-      onTap: () => context.pushNamed('paywall'),
-      child: Row(
-        children: [
-          // Gold seal — the premium-tier marker.
-          Container(
-            width: 46,
-            height: 46,
-            decoration: BoxDecoration(
-              gradient: ReconSnapColors.goldGradient,
-              borderRadius: AppRadius.all(AppRadius.md),
-              boxShadow: AppShadows.soft,
-            ),
-            child: const Icon(
-              Icons.workspace_premium_rounded,
-              color: ReconSnapColors.ink,
-              size: 22,
-            ),
-          ),
-          const SizedBox(width: AppSpacing.md),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Text(
-                      '${starterPlan.name} plan',
-                      style: Theme.of(context).textTheme.titleSmall,
-                    ),
-                    const SizedBox(width: AppSpacing.sm),
-                    const StatusPill(label: 'Preview', tone: PillTone.info),
-                  ],
-                ),
-                const SizedBox(height: 3),
-                Text(
-                  '${starterPlan.pageAllowance} pages/month · ${starterPlan.monthlyPriceLabel}',
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: AppSpacing.sm),
-          const StatusPill(
-            label: 'Upgrade',
-            tone: PillTone.success,
-            icon: Icons.arrow_forward_rounded,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _EmptyHistory extends StatelessWidget {
-  const _EmptyHistory();
-
-  @override
-  Widget build(BuildContext context) {
-    return SoftCard(
-      padding: const EdgeInsets.all(AppSpacing.xxl),
+      padding: EdgeInsets.zero,
       child: Column(
         children: [
-          Container(
-            width: 56,
-            height: 56,
-            decoration: BoxDecoration(
-              color: ReconSnapColors.subtle,
-              borderRadius: AppRadius.all(AppRadius.md),
-            ),
-            child: const Icon(
-              Icons.receipt_long_rounded,
-              size: 28,
-              color: ReconSnapColors.mutedInk,
-            ),
-          ),
-          const SizedBox(height: AppSpacing.lg),
-          Text(
-            'No conversions yet',
-            style: Theme.of(context).textTheme.titleMedium,
-          ),
-          const SizedBox(height: AppSpacing.xs),
-          Text(
-            'Your converted statements will appear here with validation status and export options.',
-            textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.bodyMedium,
-          ),
+          for (var i = 0; i < jobs.length; i++) ...[
+            if (i > 0) const Divider(height: 1, color: ReconSnapColors.border),
+            _RecentRow(job: jobs[i]),
+          ],
         ],
       ),
     );
   }
 }
 
-class _HistoryTile extends StatelessWidget {
-  const _HistoryTile({required this.job});
+class _RecentRow extends ConsumerWidget {
+  const _RecentRow({required this.job});
 
   final ConversionJob job;
 
   @override
-  Widget build(BuildContext context) {
-    final passed = job.validationReport.isPassed;
-
-    return SoftCard(
-      padding: const EdgeInsets.all(AppSpacing.lg),
-      onTap: () => context.pushNamed('validation'),
-      child: Row(
-        children: [
-          Container(
-            width: 42,
-            height: 42,
-            decoration: BoxDecoration(
-              color: ReconSnapColors.subtle,
-              borderRadius: AppRadius.all(AppRadius.sm),
+  Widget build(BuildContext context, WidgetRef ref) {
+    final reconciled = job.fullyReconciled;
+    return InkWell(
+      onTap: () {
+        ref.read(conversionControllerProvider.notifier).openJob(job);
+        context.pushNamed('validation');
+      },
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    job.filename,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.titleSmall,
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    '${job.bank.name} · ${job.verdictLabel}',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ],
+              ),
             ),
-            child: const Icon(
-              Icons.description_rounded,
-              color: ReconSnapColors.ink700,
+            const SizedBox(width: AppSpacing.sm),
+            StatusPill(
+              label: reconciled ? 'Reconciled' : 'Review',
+              tone: reconciled ? PillTone.success : PillTone.warning,
             ),
-          ),
-          const SizedBox(width: AppSpacing.md),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  job.filename,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.titleSmall,
-                ),
-                const SizedBox(height: 3),
-                Text(
-                  '${job.bank.name} · ${job.transactions.length} rows',
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: AppSpacing.sm),
-          StatusPill(
-            label: passed ? 'Validated' : 'Review',
-            tone: passed ? PillTone.success : PillTone.warning,
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

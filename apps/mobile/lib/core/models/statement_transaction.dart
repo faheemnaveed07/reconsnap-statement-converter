@@ -14,6 +14,7 @@ class StatementTransaction {
     this.sourceLine,
     this.notes,
     this.category,
+    this.editedByUser = false,
   });
 
   final String id;
@@ -26,7 +27,16 @@ class StatementTransaction {
   final double confidence;
   final int? sourcePage;
   final int? sourceLine;
+
+  /// Free-text audit note. When a user edits a row, this captures the original
+  /// value ("Was DR 1,204.55") so the correction is visible and reversible.
   final String? notes;
+
+  /// True when the user has hand-corrected this row. The row is then tagged
+  /// "Edited by you" — *not* silently marked auto-verified — so the correction
+  /// trail an accountant needs is never erased. The parser's [confidence] is
+  /// preserved as-is so the original uncertainty stays on the record.
+  final bool editedByUser;
 
   /// Accounting category (e.g. "Bank Charges", "Travel & Transport"). Assigned
   /// by the rule-based categorizer and editable by the user.
@@ -47,6 +57,7 @@ class StatementTransaction {
     'sourceLine': sourceLine,
     'notes': notes,
     'category': category,
+    'editedByUser': editedByUser,
   };
 
   factory StatementTransaction.fromJson(Map<String, dynamic> json) {
@@ -63,6 +74,7 @@ class StatementTransaction {
       sourceLine: (json['sourceLine'] as num?)?.toInt(),
       notes: json['notes'] as String?,
       category: json['category'] as String?,
+      editedByUser: (json['editedByUser'] as bool?) ?? false,
     );
   }
 
@@ -79,6 +91,7 @@ class StatementTransaction {
     int? sourceLine,
     String? notes,
     String? category,
+    bool? editedByUser,
   }) {
     return StatementTransaction(
       id: id ?? this.id,
@@ -93,6 +106,7 @@ class StatementTransaction {
       sourceLine: sourceLine ?? this.sourceLine,
       notes: notes ?? this.notes,
       category: category ?? this.category,
+      editedByUser: editedByUser ?? this.editedByUser,
     );
   }
 
@@ -110,7 +124,8 @@ class StatementTransaction {
         other.sourcePage == sourcePage &&
         other.sourceLine == sourceLine &&
         other.notes == notes &&
-        other.category == category;
+        other.category == category &&
+        other.editedByUser == editedByUser;
   }
 
   @override
@@ -127,6 +142,7 @@ class StatementTransaction {
     sourceLine,
     notes,
     category,
+    editedByUser,
   );
 }
 
