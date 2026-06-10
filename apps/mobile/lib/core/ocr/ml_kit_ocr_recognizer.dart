@@ -36,6 +36,7 @@ class MlKitOcrRecognizer implements OcrRecognizer {
               top: box.top,
               right: box.right,
               bottom: box.bottom,
+              confidence: element.confidence,
             ),
           );
         }

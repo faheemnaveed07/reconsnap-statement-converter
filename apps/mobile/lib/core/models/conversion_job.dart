@@ -7,6 +7,11 @@ enum ConversionStatus {
   selecting,
   processing,
   needsPassword,
+
+  /// A scan/photo came through with poor OCR legibility. A recoverable decision
+  /// point — the user can retake, upload the PDF, or convert anyway — shown
+  /// before parsing rather than failing late.
+  lowLegibility,
   ready,
   failed,
 }

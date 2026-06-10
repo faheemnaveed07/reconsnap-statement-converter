@@ -1,6 +1,16 @@
 import '../parsing/positioned/positioned_models.dart';
+import 'ocr_legibility.dart';
 import 'ocr_models.dart';
 import 'ocr_recognizer.dart';
+
+/// An OCR'd document together with how legible the scan was — so the UI can warn
+/// on a poor scan *before* parsing, and show the reading as an honest trust
+/// signal on the result.
+class OcrExtraction {
+  const OcrExtraction({required this.document, required this.legibility});
+  final ExtractedDocument document;
+  final LegibilityAssessment legibility;
+}
 
 /// Turns an image (photo or scan) into the same [ExtractedDocument] of
 /// positioned words that the digital-PDF extractor produces — so the document
@@ -10,23 +20,23 @@ class OcrDocumentExtractor {
 
   final OcrRecognizer _recognizer;
 
-  Future<ExtractedDocument> extract(String imagePath) async {
+  Future<OcrExtraction> extract(String imagePath) async {
     final result = await _recognizer.recognizeFile(imagePath);
     final doc = toDocument(result);
     if (doc.lines.isEmpty) throw const OcrFailedException();
-    return doc;
+    return OcrExtraction(document: doc, legibility: assessLegibility([result]));
   }
 
   /// OCRs several page images (a rasterised scanned PDF) into one document,
   /// preserving page order so multi-page templates still reconcile.
-  Future<ExtractedDocument> extractMany(List<String> imagePaths) async {
+  Future<OcrExtraction> extractMany(List<String> imagePaths) async {
     final results = <OcrResult>[];
     for (final path in imagePaths) {
       results.add(await _recognizer.recognizeFile(path));
     }
     final doc = toDocumentFromPages(results);
     if (doc.lines.isEmpty) throw const OcrFailedException();
-    return doc;
+    return OcrExtraction(document: doc, legibility: assessLegibility(results));
   }
 
   /// Pure mapping from a single-page OCR result to a positioned document.

@@ -7,6 +7,7 @@ class OcrWord {
     required this.top,
     required this.right,
     required this.bottom,
+    this.confidence,
   });
 
   final String text;
@@ -14,6 +15,11 @@ class OcrWord {
   final double top;
   final double right;
   final double bottom;
+
+  /// The OCR engine's confidence in this word, `[0, 1]`, or null when the
+  /// backend doesn't report it. Used only to assess overall scan legibility —
+  /// never to fabricate a per-row number.
+  final double? confidence;
 }
 
 class OcrLine {
