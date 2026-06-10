@@ -3,73 +3,67 @@ import 'package:flutter/material.dart';
 /// Design tokens — the single source of truth for spacing, corner radii, and
 /// elevation. Screens reference these instead of hard-coding magic numbers so
 /// the product stays visually consistent as it grows.
+///
+/// Values follow the **Financial Interface** system: a strict 4px baseline
+/// grid, "professional-soft" 4–24px radii, and minimal depth — in dark mode
+/// hierarchy comes from tonal layers and low-contrast outlines, not heavy
+/// shadows ("Swiss-style minimalism / Stealth Authority").
 class AppSpacing {
   const AppSpacing._();
 
+  /// 4px baseline grid.
   static const double xs = 4;
   static const double sm = 8;
-  static const double md = 12;
-  static const double lg = 16;
-  static const double xl = 20;
-  static const double xxl = 28;
-  static const double xxxl = 40;
+  static const double md = 16;
+  static const double lg = 24;
+  static const double xl = 32;
+  static const double xxl = 48;
 
-  /// Standard page gutter.
-  static const EdgeInsets page = EdgeInsets.fromLTRB(20, 16, 20, 32);
+  /// Extra step for the rare oversized gap.
+  static const double xxxl = 64;
+
+  /// Horizontal page gutter.
+  static const double gutter = 24;
+
+  /// Standard page padding (mobile side margins = 16).
+  static const EdgeInsets page = EdgeInsets.fromLTRB(16, 16, 16, 32);
 }
 
+/// "Professional-soft" shape language — an 8px standard radius across primary
+/// containers, buttons and inputs; tighter for tags, looser for large surfaces.
 class AppRadius {
   const AppRadius._();
 
-  static const double sm = 10;
-  static const double md = 14;
-  static const double lg = 18;
-  static const double xl = 24;
+  static const double sm = 4; // tags, checkboxes, small chips
+  static const double md = 8; // DEFAULT — buttons, inputs, cards
+  static const double lg = 16; // modals, feature hero
+  static const double xl = 24; // large hero surfaces
   static const double pill = 999;
 
   static BorderRadius all(double r) => BorderRadius.circular(r);
 }
 
-/// Soft, layered shadows tuned for a light fintech surface — deliberately
-/// subtle so the UI reads as calm and precise rather than heavy. Premium depth
-/// comes from *stacking* a tight contact shadow under a wide ambient one.
+/// Depth comes from a hairline border on the warm paper canvas — not from
+/// shadows. The brand discipline is explicit: **no gradients, glow,
+/// glassmorphism, or floating shadows.** The only place a shadow is permitted is
+/// a transient floating surface (a modal sheet or menu lifting off the page),
+/// and even there it is a barely-there diffusion. Cards, buttons and pills carry
+/// no shadow at all — the border and the paper do the work.
 class AppShadows {
   const AppShadows._();
 
-  /// Pills / small chips — a single whisper-soft shadow.
-  static const List<BoxShadow> soft = [
-    BoxShadow(color: Color(0x0D101828), blurRadius: 8, offset: Offset(0, 2)),
-  ];
+  /// No elevation. Flat surfaces are the default — the hairline border carries
+  /// every card and button. Kept as an empty list so call-sites read clearly.
+  static const List<BoxShadow> none = [];
 
-  /// Primary content cards: a crisp contact shadow + a soft ambient lift.
-  static const List<BoxShadow> card = [
-    BoxShadow(color: Color(0x0F1A2540), blurRadius: 1, offset: Offset(0, 1)),
-    BoxShadow(color: Color(0x0F1A2540), blurRadius: 3, offset: Offset(0, 2)),
-    BoxShadow(color: Color(0x141A2540), blurRadius: 24, offset: Offset(0, 12)),
-  ];
+  /// Back-compat aliases — all flat now. Depth = border + paper.
+  static const List<BoxShadow> soft = none;
+  static const List<BoxShadow> card = none;
+  static const List<BoxShadow> button = none;
 
-  /// Tactile buttons — a tinted, directional shadow so they read as pressable.
-  static const List<BoxShadow> button = [
-    BoxShadow(color: Color(0x2B0B1B2B), blurRadius: 16, offset: Offset(0, 8)),
-    BoxShadow(color: Color(0x140B1B2B), blurRadius: 2, offset: Offset(0, 1)),
-  ];
-
-  /// Hero / elevated surfaces.
+  /// The single allowed lift: a transient modal sheet / menu floating off the
+  /// page. A soft, low-opacity ink diffusion — never used on in-page content.
   static const List<BoxShadow> raised = [
-    BoxShadow(color: Color(0x24101828), blurRadius: 36, offset: Offset(0, 18)),
-    BoxShadow(color: Color(0x0F101828), blurRadius: 2, offset: Offset(0, 1)),
+    BoxShadow(color: Color(0x14232929), blurRadius: 28, offset: Offset(0, 14)),
   ];
-}
-
-/// Subtle overlay gradients that give flat surfaces depth without colour shifts.
-class AppGradients {
-  const AppGradients._();
-
-  /// A faint top-down sheen for elevated dark cards — a subtle inner glow that
-  /// lifts the surface off the canvas just enough to feel crafted.
-  static const LinearGradient cardSheen = LinearGradient(
-    begin: Alignment.topCenter,
-    end: Alignment.bottomCenter,
-    colors: [Color(0xFF17212F), Color(0xFF121A28)],
-  );
 }

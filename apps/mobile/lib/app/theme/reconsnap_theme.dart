@@ -3,94 +3,142 @@ import 'package:google_fonts/google_fonts.dart';
 
 import 'app_tokens.dart';
 
-/// ReconSnap brand palette — **dark executive** edition.
+/// ReconSnap brand palette — **Editorial Ledger** edition.
 ///
-/// A deep charcoal-navy canvas, silver/white text, and a single refined **gold**
-/// accent reserved for primary actions and trust seals. Validation green is kept
-/// as a *semantic* colour (reconciled / passed); amber and red stay for warning
-/// and risk. Gold is used sparingly so the system reads premium, not gaudy.
+/// A trust-first identity that feels like a well-made ledger, not a startup: a
+/// warm paper canvas, near-black ink, a single terracotta accent for human
+/// emphasis, and a calm moss green reserved *exclusively* for "verified /
+/// reconciled". Hierarchy comes from typographic scale, weight and white space —
+/// never from gradients, glow, or a wall of icons. Money is always set in mono
+/// with tabular lining figures so columns align to the cent.
+///
+/// Discipline rules (enforced by convention across screens):
+///   • Moss means *verified only*. A screen with no verification has no green.
+///   • One terracotta moment per screen. Accents stop being accents if repeated.
+///   • Status colour always pairs with text or an icon — never colour alone.
+///   • Depth = a hairline border + the paper. No gradients/glow/glass/shadows.
 class ReconSnapColors {
-  // Brand navy (hero / seals / brand mark)
-  static const ink = Color(0xFF0E1726);
-  static const inkSoft = Color(0xFF1B2A44);
+  // ── Core palette ────────────────────────────────────────────────────
+  /// Canvas. Warm off-white — calmer than zinc grey.
+  static const paper = Color(0xFFFDFDF9);
 
-  // Premium accent
-  static const gold = Color(0xFFCBA35A);
-  static const goldSoft = Color(0xFFE3C485);
+  /// Text, primary buttons, the wordmark. A near-black desaturated charcoal.
+  static const ink = Color(0xFF232929);
 
-  // Validation / semantic
-  static const accentGreen = Color(0xFF34D399);
-  static const accentGreenDark = Color(0xFF34D399);
-  static const actionBlue = Color(0xFF6AA8FF);
+  /// The single human accent — brand, emphasis, links. Used sparingly.
+  static const terracotta = Color(0xFF8C4F3C);
 
-  // Text scale (light on dark)
-  static const ink900 = Color(0xFFEEF3F9); // primary text / headings
-  static const ink700 = Color(0xFFB8C4D4); // secondary text / icons
-  static const mutedInk = Color(0xFF8A99AD); // body / captions
-  static const ink400 = Color(0xFF5C6B82); // faint / chevrons
+  /// Reserved for "verified / reconciled" fills and large elements. Nothing
+  /// else. Pale, so pair with [mossDeep] for any text.
+  static const moss = Color(0xFFA7B9AC);
 
-  // Surfaces
-  static const surface = Color(0xFF0A0F1A); // scaffold canvas
-  static const card = Color(0xFF131C2B); // elevated card
-  static const subtle = Color(0xFF1A2333); // chips / inset blocks
-  static const border = Color(0xFF273247); // hairline
+  // ── Functional extension (earth tones tuned to paper) ───────────────
+  /// Verified text/icons — contrast-safe moss for "reconciled" copy.
+  static const mossDeep = Color(0xFF5F7A66);
 
-  // Semantic surfaces (dark tints)
-  static const warningAmber = Color(0xFFE0A93B);
-  static const warningSurface = Color(0xFF2A2210);
-  static const riskRed = Color(0xFFF26B66);
-  static const riskSurface = Color(0xFF2A1514);
-  static const successSurface = Color(0xFF0F2A20);
-  static const infoSurface = Color(0xFF13233F);
+  /// Needs review / warning.
+  static const ochre = Color(0xFF9A6B22);
 
-  static const heroGradient = LinearGradient(
-    begin: Alignment.topLeft,
-    end: Alignment.bottomRight,
-    colors: [ink, inkSoft],
-  );
+  /// Failed / error. A red that belongs on paper.
+  static const brick = Color(0xFF8E3B30);
 
-  /// Reserved for premium accents (seals, the upgrade marker).
-  static const goldGradient = LinearGradient(
-    begin: Alignment.topLeft,
-    end: Alignment.bottomRight,
-    colors: [goldSoft, gold],
-  );
+  // ── Ink tints (structure: muted text, borders, fills) ───────────────
+  static const ink900 = ink; // headings / primary text
+  static const ink700 = Color(0xFF3C4441); // body
+  static const mutedInk = Color(0xFF6B7270); // captions / meta
+  static const ink400 = Color(0xFF9AA09C); // faint / chevrons / disabled
+  static const border = Color(0xFFE6E5DC); // hairline on paper
+  static const outline = Color(0xFFD5D4C8); // stronger stroke
+
+  // ── Surfaces (warm paper tiers) ─────────────────────────────────────
+  /// Card surface — a hair lighter/cleaner than the canvas.
+  static const card = Color(0xFFFFFFFD);
+  static const containerLowest = Color(0xFFFFFFFD);
+  static const containerLow = Color(0xFFF7F6EF); // inset blocks / fields
+  static const container = Color(0xFFF1F0E7); // chips / subtle fills
+  static const containerHigh = Color(0xFFEAE9DD);
+  static const containerHighest = Color(0xFFE2E1D4);
+  static const subtle = container;
+
+  // ── Tinted status surfaces (muted, on-paper) ────────────────────────
+  static const verifiedSurface = Color(0xFFEBF0EC); // moss tint
+  static const reviewSurface = Color(0xFFF5EEDD); // ochre tint
+  static const failSurface = Color(0xFFF6E7E3); // brick tint
+  static const accentSurface = Color(0xFFF4E9E3); // terracotta tint
+
+  // ── Primary (ink on paper) ──────────────────────────────────────────
+  static const primary = ink;
+  static const onPrimary = paper;
+  static const primaryContainer = Color(0xFF2E3633);
+  static const onPrimaryContainer = Color(0xFFE6E5DC);
+  static const inkSoft = Color(0xFF2E3633);
+
+  // ── Legacy semantic aliases (kept so screens compile during migration;
+  //    all now resolve to the editorial palette, not the old fintech one) ──
+  static const surface = paper;
+  static const accentGreen = mossDeep; // "verified"
+  static const accentGreenDark = mossDeep;
+  static const secondaryContainer = verifiedSurface;
+  static const onSecondaryContainer = mossDeep;
+  static const secondaryFixed = moss;
+  static const actionBlue = terracotta; // info → terracotta (no blue)
+  static const infoSurface = accentSurface;
+  static const successSurface = verifiedSurface;
+  static const warningAmber = ochre;
+  static const warningSurface = reviewSurface;
+  static const riskRed = brick;
+  static const riskSurface = failSurface;
+  static const onRiskContainer = brick;
+
+  /// Back-compat for the retired dark hero panel / brand mark. Flat ink — no
+  /// real gradient (kept only so old call-sites resolve until rewritten).
+  static const heroGradient = LinearGradient(colors: [ink, ink]);
 }
 
 class ReconSnapTheme {
-  static ThemeData get light => dark; // single source; app uses the dark system
+  // The product is a single warm-paper system; both getters resolve here.
+  static ThemeData get dark => light;
 
-  static ThemeData get dark {
-    const scheme = ColorScheme.dark(
-      primary: ReconSnapColors.gold,
-      onPrimary: ReconSnapColors.ink,
-      secondary: ReconSnapColors.accentGreen,
-      onSecondary: ReconSnapColors.ink,
-      surface: ReconSnapColors.card,
+  static ThemeData get light {
+    const scheme = ColorScheme.light(
+      primary: ReconSnapColors.primary,
+      onPrimary: ReconSnapColors.onPrimary,
+      primaryContainer: ReconSnapColors.primaryContainer,
+      onPrimaryContainer: ReconSnapColors.onPrimaryContainer,
+      secondary: ReconSnapColors.mossDeep,
+      onSecondary: Colors.white,
+      secondaryContainer: ReconSnapColors.verifiedSurface,
+      onSecondaryContainer: ReconSnapColors.mossDeep,
+      tertiary: ReconSnapColors.terracotta,
+      onTertiary: Colors.white,
+      surface: ReconSnapColors.paper,
       onSurface: ReconSnapColors.ink900,
-      error: ReconSnapColors.riskRed,
-      onError: ReconSnapColors.ink,
+      onSurfaceVariant: ReconSnapColors.ink700,
+      outline: ReconSnapColors.outline,
+      outlineVariant: ReconSnapColors.border,
+      error: ReconSnapColors.brick,
+      onError: Colors.white,
+      errorContainer: ReconSnapColors.failSurface,
+      onErrorContainer: ReconSnapColors.brick,
     );
 
     return ThemeData(
       useMaterial3: true,
-      brightness: Brightness.dark,
+      brightness: Brightness.light,
       colorScheme: scheme,
-      scaffoldBackgroundColor: ReconSnapColors.surface,
-      fontFamily: GoogleFonts.manrope().fontFamily,
+      scaffoldBackgroundColor: ReconSnapColors.paper,
+      fontFamily: GoogleFonts.inter().fontFamily,
       splashFactory: InkSparkle.splashFactory,
-      // Manrope over the calibrated size/weight scale below; hierarchy intact.
-      textTheme: GoogleFonts.manropeTextTheme(_textTheme),
-      appBarTheme: const AppBarTheme(
+      textTheme: _buildTextTheme(),
+      appBarTheme: AppBarTheme(
         elevation: 0,
         scrolledUnderElevation: 0,
         centerTitle: false,
-        backgroundColor: ReconSnapColors.surface,
+        backgroundColor: ReconSnapColors.paper,
         foregroundColor: ReconSnapColors.ink900,
-        titleTextStyle: TextStyle(
-          color: ReconSnapColors.ink900,
-          fontSize: 18,
-          fontWeight: FontWeight.w800,
+        titleTextStyle: serif(
+          fontSize: 20,
+          fontWeight: FontWeight.w600,
           letterSpacing: -0.2,
         ),
       ),
@@ -100,24 +148,23 @@ class ReconSnapTheme {
         margin: EdgeInsets.zero,
         clipBehavior: Clip.antiAlias,
         shape: RoundedRectangleBorder(
-          borderRadius: AppRadius.all(AppRadius.lg),
+          borderRadius: AppRadius.all(AppRadius.md),
           side: const BorderSide(color: ReconSnapColors.border),
         ),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          // Gold primary action = the executive accent, used everywhere a
-          // primary CTA appears. Dark navy text keeps AA contrast on gold.
-          backgroundColor: ReconSnapColors.gold,
-          foregroundColor: ReconSnapColors.ink,
-          disabledBackgroundColor: ReconSnapColors.border,
+          // Primary CTA — ink on paper. Calm, high-contrast, modern.
+          backgroundColor: ReconSnapColors.ink,
+          foregroundColor: ReconSnapColors.onPrimary,
+          disabledBackgroundColor: ReconSnapColors.container,
           disabledForegroundColor: ReconSnapColors.ink400,
-          minimumSize: const Size.fromHeight(54),
-          elevation: 4,
-          shadowColor: ReconSnapColors.gold.withValues(alpha: 0.45),
+          minimumSize: const Size.fromHeight(52),
+          elevation: 0,
+          shadowColor: Colors.transparent,
           textStyle: const TextStyle(
             fontSize: 15,
-            fontWeight: FontWeight.w800,
+            fontWeight: FontWeight.w600,
             letterSpacing: 0.1,
           ),
           shape: RoundedRectangleBorder(
@@ -127,15 +174,16 @@ class ReconSnapTheme {
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
+          // Secondary: paper surface, hairline border, ink text.
           foregroundColor: ReconSnapColors.ink900,
           backgroundColor: ReconSnapColors.card,
-          minimumSize: const Size.fromHeight(52),
+          minimumSize: const Size.fromHeight(50),
           textStyle: const TextStyle(
             fontSize: 15,
-            fontWeight: FontWeight.w700,
+            fontWeight: FontWeight.w600,
             letterSpacing: 0.1,
           ),
-          side: const BorderSide(color: ReconSnapColors.border, width: 1.2),
+          side: const BorderSide(color: ReconSnapColors.outline, width: 1),
           shape: RoundedRectangleBorder(
             borderRadius: AppRadius.all(AppRadius.md),
           ),
@@ -143,18 +191,19 @@ class ReconSnapTheme {
       ),
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
-          foregroundColor: ReconSnapColors.goldSoft,
-          textStyle: const TextStyle(fontWeight: FontWeight.w700),
+          // Quiet text links carry the single terracotta accent.
+          foregroundColor: ReconSnapColors.terracotta,
+          textStyle: const TextStyle(fontWeight: FontWeight.w600),
         ),
       ),
       chipTheme: ChipThemeData(
-        backgroundColor: ReconSnapColors.subtle,
-        selectedColor: ReconSnapColors.gold,
+        backgroundColor: ReconSnapColors.container,
+        selectedColor: ReconSnapColors.ink,
         side: BorderSide.none,
         labelStyle: const TextStyle(
           color: ReconSnapColors.ink700,
           fontWeight: FontWeight.w600,
-          fontSize: 12.5,
+          fontSize: 12,
         ),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         shape: RoundedRectangleBorder(
@@ -167,17 +216,17 @@ class ReconSnapTheme {
         space: 1,
       ),
       bottomSheetTheme: const BottomSheetThemeData(
-        backgroundColor: ReconSnapColors.card,
+        backgroundColor: ReconSnapColors.paper,
         surfaceTintColor: Colors.transparent,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
         ),
       ),
       snackBarTheme: SnackBarThemeData(
         behavior: SnackBarBehavior.floating,
-        backgroundColor: ReconSnapColors.inkSoft,
+        backgroundColor: ReconSnapColors.ink,
         contentTextStyle: const TextStyle(
-          color: ReconSnapColors.ink900,
+          color: Colors.white,
           fontWeight: FontWeight.w600,
         ),
         shape: RoundedRectangleBorder(
@@ -186,11 +235,12 @@ class ReconSnapTheme {
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: ReconSnapColors.card,
+        fillColor: ReconSnapColors.containerLow,
         contentPadding: const EdgeInsets.symmetric(
-          horizontal: 16,
-          vertical: 16,
+          horizontal: 14,
+          vertical: 12,
         ),
+        hintStyle: const TextStyle(color: ReconSnapColors.mutedInk),
         labelStyle: const TextStyle(color: ReconSnapColors.mutedInk),
         border: OutlineInputBorder(
           borderRadius: AppRadius.all(AppRadius.md),
@@ -200,67 +250,143 @@ class ReconSnapTheme {
           borderRadius: AppRadius.all(AppRadius.md),
           borderSide: const BorderSide(color: ReconSnapColors.border),
         ),
+        // Focus ring uses the terracotta accent.
         focusedBorder: OutlineInputBorder(
           borderRadius: AppRadius.all(AppRadius.md),
-          borderSide: const BorderSide(color: ReconSnapColors.gold, width: 1.6),
+          borderSide: const BorderSide(
+            color: ReconSnapColors.terracotta,
+            width: 1.6,
+          ),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: AppRadius.all(AppRadius.md),
+          borderSide: const BorderSide(color: ReconSnapColors.brick),
         ),
       ),
     );
   }
 
-  static const TextTheme _textTheme = TextTheme(
-    displaySmall: TextStyle(
-      fontSize: 30,
-      height: 1.1,
-      fontWeight: FontWeight.w800,
-      letterSpacing: -0.6,
-      color: ReconSnapColors.ink900,
-    ),
-    headlineSmall: TextStyle(
-      fontSize: 24,
-      height: 1.15,
-      fontWeight: FontWeight.w800,
-      letterSpacing: -0.4,
-      color: ReconSnapColors.ink900,
-    ),
-    titleLarge: TextStyle(
-      fontSize: 20,
+  /// Editorial serif — the human voice. Page titles, display headlines, the
+  /// reconciliation verdict. Warm, considered, authoritative. Ship target is
+  /// Fraunces/Newsreader; we use **Lora**, which reads the same intent.
+  static TextStyle serif({
+    double fontSize = 24,
+    FontWeight fontWeight = FontWeight.w600,
+    Color color = ReconSnapColors.ink900,
+    double? letterSpacing,
+    double? height,
+  }) {
+    return GoogleFonts.lora(
+      fontSize: fontSize,
+      fontWeight: fontWeight,
+      color: color,
+      letterSpacing: letterSpacing,
+      height: height,
+    );
+  }
+
+  /// Monospace — the proof. Every figure: currency, balances, dates,
+  /// transaction IDs, the reconciliation delta. Tabular lining figures so
+  /// columns align. **Money is never set in the sans.** Ship face: JetBrains
+  /// Mono.
+  static TextStyle mono({
+    double fontSize = 13,
+    FontWeight fontWeight = FontWeight.w500,
+    Color color = ReconSnapColors.ink900,
+    double? letterSpacing,
+    double? height,
+  }) {
+    return GoogleFonts.jetBrainsMono(
+      fontSize: fontSize,
+      fontWeight: fontWeight,
+      color: color,
+      letterSpacing: letterSpacing,
+      height: height,
+      fontFeatures: const [
+        FontFeature.tabularFigures(),
+        FontFeature.liningFigures(),
+      ],
+    );
+  }
+
+  /// Tracked uppercase eyebrow / label — the grotesque sans doing metadata.
+  static TextStyle eyebrow({
+    double fontSize = 11,
+    Color color = ReconSnapColors.mutedInk,
+    FontWeight fontWeight = FontWeight.w700,
+  }) {
+    return GoogleFonts.inter(
+      fontSize: fontSize,
+      fontWeight: fontWeight,
+      color: color,
+      letterSpacing: fontSize * 0.14,
       height: 1.2,
-      fontWeight: FontWeight.w800,
-      letterSpacing: -0.2,
-      color: ReconSnapColors.ink900,
-    ),
-    titleMedium: TextStyle(
-      fontSize: 16,
-      height: 1.25,
-      fontWeight: FontWeight.w700,
-      letterSpacing: -0.1,
-      color: ReconSnapColors.ink900,
-    ),
-    titleSmall: TextStyle(
-      fontSize: 14,
-      fontWeight: FontWeight.w700,
-      color: ReconSnapColors.ink900,
-    ),
-    bodyLarge: TextStyle(
-      fontSize: 15.5,
-      height: 1.45,
-      color: ReconSnapColors.ink700,
-    ),
-    bodyMedium: TextStyle(
-      fontSize: 14,
-      height: 1.45,
-      color: ReconSnapColors.mutedInk,
-    ),
-    bodySmall: TextStyle(
-      fontSize: 12.5,
-      height: 1.4,
-      color: ReconSnapColors.mutedInk,
-    ),
-    labelLarge: TextStyle(
-      fontSize: 14,
-      fontWeight: FontWeight.w700,
-      color: ReconSnapColors.ink900,
-    ),
-  );
+    );
+  }
+
+  /// Text theme: serif carries display/titles (the human moments); the
+  /// grotesque sans carries body, labels and controls (the machine).
+  static TextTheme _buildTextTheme() {
+    final base = GoogleFonts.interTextTheme();
+    return base.copyWith(
+      // Serif — display & titles.
+      displaySmall: serif(
+        fontSize: 34,
+        height: 1.12,
+        fontWeight: FontWeight.w600,
+        letterSpacing: -0.5,
+      ),
+      headlineSmall: serif(
+        fontSize: 24,
+        height: 1.2,
+        fontWeight: FontWeight.w600,
+        letterSpacing: -0.24,
+      ),
+      titleLarge: serif(
+        fontSize: 18,
+        height: 1.3,
+        fontWeight: FontWeight.w600,
+        letterSpacing: -0.1,
+      ),
+      // Sans — section titles, body, labels.
+      titleMedium: GoogleFonts.inter(
+        fontSize: 16,
+        height: 1.4,
+        fontWeight: FontWeight.w700,
+        color: ReconSnapColors.ink900,
+      ),
+      titleSmall: GoogleFonts.inter(
+        fontSize: 14,
+        fontWeight: FontWeight.w700,
+        color: ReconSnapColors.ink900,
+      ),
+      bodyLarge: GoogleFonts.inter(
+        fontSize: 16,
+        height: 1.55,
+        color: ReconSnapColors.ink700,
+      ),
+      bodyMedium: GoogleFonts.inter(
+        fontSize: 14,
+        height: 1.5,
+        color: ReconSnapColors.ink700,
+      ),
+      bodySmall: GoogleFonts.inter(
+        fontSize: 12,
+        height: 1.4,
+        color: ReconSnapColors.mutedInk,
+      ),
+      labelLarge: GoogleFonts.inter(
+        fontSize: 14,
+        fontWeight: FontWeight.w600,
+        color: ReconSnapColors.ink900,
+      ),
+      labelMedium: GoogleFonts.inter(
+        fontSize: 11,
+        height: 1.3,
+        fontWeight: FontWeight.w700,
+        letterSpacing: 1.5,
+        color: ReconSnapColors.mutedInk,
+      ),
+    );
+  }
 }
