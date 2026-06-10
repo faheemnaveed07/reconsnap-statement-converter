@@ -32,6 +32,7 @@ class TemplatedStatementParser implements StatementParser {
     BankTemplateRegistry registry = const BankTemplateRegistry(),
     DocumentClassifier classifier = const DocumentClassifier(),
     TransactionLineParser genericParser = const TransactionLineParser(),
+    this.dayFirst = true,
   }) : _extractor = extractor,
        _registry = registry,
        _classifier = classifier,
@@ -41,6 +42,12 @@ class TemplatedStatementParser implements StatementParser {
   final BankTemplateRegistry _registry;
   final DocumentClassifier _classifier;
   final TransactionLineParser _generic;
+
+  /// The user's statement-date-format preference, applied to bank templates
+  /// (day-first DD/MM for UAE/GCC/UK; false for month-first US statements). The
+  /// generic fallback's interpretation comes from [genericParser]'s own
+  /// `dayFirst`; the provider builds both from the same preference.
+  final bool dayFirst;
 
   static const _currencyByCountry = {
     'AE': 'AED',
@@ -104,7 +111,7 @@ class TemplatedStatementParser implements StatementParser {
     final ParsedStatement parsed;
     final String version;
     if (template != null) {
-      parsed = template.parse(doc, currency: currency);
+      parsed = template.parse(doc, currency: currency, dayFirst: dayFirst);
       version = '${template.bankId}-v1';
     } else {
       // No bank template matched — fall back to the generic balance-reconciling

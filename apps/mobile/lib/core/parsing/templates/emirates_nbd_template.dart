@@ -40,6 +40,13 @@ class EmiratesNbdTemplate implements BankStatementTemplate {
   }
 
   @override
-  ParsedStatement parse(ExtractedDocument doc, {required String currency}) =>
-      _parser.parse(doc, _config, currency: currency);
+  ParsedStatement parse(
+    ExtractedDocument doc, {
+    required String currency,
+    bool dayFirst = true,
+  }) => _parser.parse(
+    doc,
+    _config.copyWith(dayFirst: dayFirst),
+    currency: currency,
+  );
 }

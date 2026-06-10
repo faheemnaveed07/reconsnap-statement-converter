@@ -110,5 +110,16 @@ Date        Description                 Amount      Balance
       final row = result.transactions.last;
       expect(row.description, 'Pay ROLL transfer');
     });
+
+    test('honours the dayFirst preference for ambiguous dates', () {
+      const text = '01/01/2026 Opening 100.00\n03/04/2026 Payment 10.00 90.00';
+      final dayFirst = const TransactionLineParser(dayFirst: true).parse(text);
+      expect(dayFirst.transactions.last.date, DateTime(2026, 4, 3));
+
+      final monthFirst = const TransactionLineParser(
+        dayFirst: false,
+      ).parse(text);
+      expect(monthFirst.transactions.last.date, DateTime(2026, 3, 4));
+    });
   });
 }

@@ -34,6 +34,16 @@ class ColumnTableConfig {
   /// polluting the previous transaction when markers miss it.
   final int maxContinuationLines;
 
+  /// Returns a copy with [dayFirst] overridden — used to apply the user's
+  /// statement-date-format preference without touching the rest of a bank
+  /// template's configuration.
+  ColumnTableConfig copyWith({bool? dayFirst}) => ColumnTableConfig(
+    columns: columns,
+    dayFirst: dayFirst ?? this.dayFirst,
+    noiseMarkers: noiseMarkers,
+    maxContinuationLines: maxContinuationLines,
+  );
+
   static const defaultColumns = <ColumnSpec>[
     ColumnSpec(key: 'date', keywords: ['date']),
     ColumnSpec(

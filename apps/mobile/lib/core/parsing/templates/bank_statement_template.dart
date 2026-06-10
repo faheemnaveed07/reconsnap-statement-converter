@@ -22,5 +22,12 @@ abstract interface class BankStatementTemplate {
   /// Parses [doc] into reconciled rows. Returns an empty [ParsedStatement] with
   /// a warning rather than throwing when the table can't be located, so the
   /// orchestrator can fall back or report cleanly.
-  ParsedStatement parse(ExtractedDocument doc, {required String currency});
+  ///
+  /// [dayFirst] applies the user's statement-date-format preference (day-first
+  /// DD/MM for UAE/GCC/UK; false for month-first US statements).
+  ParsedStatement parse(
+    ExtractedDocument doc, {
+    required String currency,
+    bool dayFirst = true,
+  });
 }

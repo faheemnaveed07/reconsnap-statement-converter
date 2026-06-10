@@ -3,12 +3,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:share_plus/share_plus.dart';
 
+import '../../../app/copy/trust_copy.dart';
 import '../../../app/theme/app_tokens.dart';
 import '../../../app/theme/reconsnap_theme.dart';
 import '../../../app/widgets/app_components.dart';
 import '../../../core/models/bank.dart';
 import '../../../core/services/review_prompter.dart';
 import '../../billing/presentation/entitlements_controller.dart';
+import '../../conversion/presentation/conversion_controller.dart';
 
 /// App version, mirrored from pubspec. Update on release.
 const _appVersion = '1.0.0';
@@ -21,31 +23,56 @@ class SettingsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final entitlements = ref.watch(entitlementsProvider);
+    final prefs = ref.watch(conversionPreferencesProvider);
+    final defaultBank = _bankById(prefs.defaultBankId);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Settings')),
+      appBar: AppBar(title: const Text('Account')),
       body: SafeArea(
         child: ListView(
           padding: AppSpacing.page,
           children: [
             const _ProfileCard(),
             const SizedBox(height: AppSpacing.xl),
-            SectionHeader(title: 'Account'),
+            SectionHeader(title: 'Plan'),
             const SizedBox(height: AppSpacing.md),
             _SettingsTile(
               icon: Icons.bolt_rounded,
-              title: 'Credits and billing',
+              title: 'Plan & credits',
               subtitle: entitlements.isPro
                   ? 'Pro — unlimited conversions'
                   : '${entitlements.availableCredits} conversions remaining · tap to upgrade',
               onTap: () => context.pushNamed('paywall'),
             ),
+            const SizedBox(height: AppSpacing.xl),
+            // Parsing preferences — fewer decisions on every monthly conversion.
+            SectionHeader(title: 'Preferences'),
+            const SizedBox(height: AppSpacing.md),
+            _SettingsTile(
+              icon: Icons.account_balance_outlined,
+              title: 'Default bank',
+              subtitle: defaultBank == null
+                  ? 'None — detected from each file instead.'
+                  : '${defaultBank.name} · pre-selected on new conversions.',
+              onTap: () => _pickDefaultBank(context, ref),
+            ),
+            const SizedBox(height: AppSpacing.md),
+            _SettingsTile(
+              icon: Icons.event_rounded,
+              title: 'Statement date format',
+              subtitle: prefs.dayFirst
+                  ? 'Day-first (DD/MM) — UAE, GCC, UK.'
+                  : 'Month-first (MM/DD) — US.',
+              onTap: () => _pickDateFormat(context, ref),
+            ),
+            const SizedBox(height: AppSpacing.xl),
+            // The trust group — the proof, surfaced rather than buried.
+            SectionHeader(title: 'Trust'),
             const SizedBox(height: AppSpacing.md),
             const _SettingsTile(
               icon: Icons.lock_outline_rounded,
-              title: 'Privacy',
-              subtitle:
-                  'Statements are processed on your device and never uploaded. No bank credentials are ever requested.',
+              title: 'Privacy & data path',
+              subtitle: TrustCopy.oneLine,
             ),
             const SizedBox(height: AppSpacing.md),
             _SettingsTile(
@@ -56,8 +83,18 @@ class SettingsScreen extends ConsumerWidget {
             ),
             const SizedBox(height: AppSpacing.md),
             _SettingsTile(
+              icon: Icons.insights_rounded,
+              title: 'Diagnostics',
+              subtitle:
+                  'Conversion outcomes (no statement content) you can share.',
+              onTap: () => context.pushNamed('diagnostics'),
+            ),
+            const SizedBox(height: AppSpacing.xl),
+            SectionHeader(title: 'Support'),
+            const SizedBox(height: AppSpacing.md),
+            _SettingsTile(
               icon: Icons.support_agent_rounded,
-              title: 'Request bank support',
+              title: 'Request a bank',
               subtitle: 'Tell us which bank to add next.',
               onTap: () => SharePlus.instance.share(
                 ShareParams(
@@ -82,22 +119,6 @@ class SettingsScreen extends ConsumerWidget {
               ),
             ),
             const SizedBox(height: AppSpacing.xl),
-            SectionHeader(title: 'About'),
-            const SizedBox(height: AppSpacing.md),
-            const _SettingsTile(
-              icon: Icons.shield_outlined,
-              title: 'Processing',
-              subtitle: 'On your device — works offline, nothing uploaded.',
-            ),
-            const SizedBox(height: AppSpacing.md),
-            _SettingsTile(
-              icon: Icons.insights_rounded,
-              title: 'Diagnostics',
-              subtitle:
-                  'Conversion outcomes (no statement content) you can share.',
-              onTap: () => context.pushNamed('diagnostics'),
-            ),
-            const SizedBox(height: AppSpacing.xl),
             Center(
               child: Text(
                 'ReconSnap · v$_appVersion',
@@ -110,6 +131,119 @@ class SettingsScreen extends ConsumerWidget {
       ),
     );
   }
+}
+
+Bank? _bankById(String? id) {
+  if (id == null) return null;
+  for (final b in launchBanks) {
+    if (b.id == id) return b;
+  }
+  return null;
+}
+
+/// Choose the bank pre-selected on new conversions (or none → detect per file).
+/// Setting it also updates the in-flight selection so the next confirm defaults
+/// to it.
+void _pickDefaultBank(BuildContext context, WidgetRef ref) {
+  final current = ref.read(conversionPreferencesProvider).defaultBankId;
+  showModalBottomSheet<void>(
+    context: context,
+    showDragHandle: true,
+    builder: (sheetContext) => SafeArea(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ListTile(
+            leading: const Icon(Icons.do_not_disturb_on_outlined),
+            title: const Text('No default'),
+            subtitle: const Text('Detect the bank from each file.'),
+            trailing: current == null
+                ? const Icon(
+                    Icons.check_rounded,
+                    color: ReconSnapColors.terracotta,
+                  )
+                : null,
+            onTap: () {
+              ref
+                  .read(conversionPreferencesProvider.notifier)
+                  .setDefaultBank(null);
+              Navigator.of(sheetContext).pop();
+            },
+          ),
+          for (final bank in launchBanks)
+            ListTile(
+              leading: const Icon(Icons.account_balance_rounded),
+              title: Text(bank.name),
+              subtitle: Text(bank.countryCode),
+              trailing: current == bank.id
+                  ? const Icon(
+                      Icons.check_rounded,
+                      color: ReconSnapColors.terracotta,
+                    )
+                  : null,
+              onTap: () {
+                ref
+                    .read(conversionPreferencesProvider.notifier)
+                    .setDefaultBank(bank.id);
+                ref
+                    .read(conversionControllerProvider.notifier)
+                    .selectBank(bank);
+                Navigator.of(sheetContext).pop();
+              },
+            ),
+        ],
+      ),
+    ),
+  );
+}
+
+/// Choose how ambiguous numeric dates are read. Drives the parser on the next
+/// conversion.
+void _pickDateFormat(BuildContext context, WidgetRef ref) {
+  final dayFirst = ref.read(conversionPreferencesProvider).dayFirst;
+  showModalBottomSheet<void>(
+    context: context,
+    showDragHandle: true,
+    builder: (sheetContext) => SafeArea(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ListTile(
+            title: const Text('Day-first (DD/MM)'),
+            subtitle: const Text('UAE, GCC, UK and most of the world.'),
+            trailing: dayFirst
+                ? const Icon(
+                    Icons.check_rounded,
+                    color: ReconSnapColors.terracotta,
+                  )
+                : null,
+            onTap: () {
+              ref
+                  .read(conversionPreferencesProvider.notifier)
+                  .setDayFirst(true);
+              Navigator.of(sheetContext).pop();
+            },
+          ),
+          ListTile(
+            title: const Text('Month-first (MM/DD)'),
+            subtitle: const Text('United States.'),
+            trailing: !dayFirst
+                ? const Icon(
+                    Icons.check_rounded,
+                    color: ReconSnapColors.terracotta,
+                  )
+                : null,
+            onTap: () {
+              ref
+                  .read(conversionPreferencesProvider.notifier)
+                  .setDayFirst(false);
+              Navigator.of(sheetContext).pop();
+            },
+          ),
+        ],
+      ),
+    ),
+  );
 }
 
 void _showSupportedBanks(BuildContext context) {
@@ -192,16 +326,18 @@ class _ProfileCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Guest', style: Theme.of(context).textTheme.titleMedium),
+                Text(
+                  'This device',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
                 const SizedBox(height: 2),
                 Text(
-                  'Sign in with email, Google, or Apple — coming soon.',
+                  'Your conversions and history stay on this device.',
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
               ],
             ),
           ),
-          const StatusPill(label: 'Preview', tone: PillTone.info),
         ],
       ),
     );
