@@ -27,6 +27,14 @@ extension BillingProductInfo on BillingProduct {
 
   bool get isSubscription =>
       this == BillingProduct.proMonthly || this == BillingProduct.proYearly;
+
+  /// Annual savings vs paying monthly — shown on the yearly plan so the value is
+  /// explicit. Derived from the placeholder prices ($9.99/mo × 12 vs $79.99/yr
+  /// ≈ 33%, two months free). Null for non-annual products.
+  String? get savingsLabel => switch (this) {
+    BillingProduct.proYearly => 'Save 33% vs monthly — 2 months free',
+    _ => null,
+  };
 }
 
 /// Abstraction over the billing backend. `LocalBillingService` implements it for

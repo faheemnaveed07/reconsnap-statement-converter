@@ -2,7 +2,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../features/billing/presentation/paywall_screen.dart';
-import '../../features/conversion/presentation/home_screen.dart';
 import '../../features/conversion/presentation/processing_screen.dart';
 import '../../features/conversion/presentation/upload_screen.dart';
 import '../../features/conversion/presentation/validation_screen.dart';
@@ -10,6 +9,7 @@ import '../../features/diagnostics/presentation/diagnostics_screen.dart';
 import '../../features/history/presentation/history_screen.dart';
 import '../../features/onboarding/presentation/onboarding_screen.dart';
 import '../../features/settings/presentation/settings_screen.dart';
+import '../shell/main_shell.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
   // Resolved once at startup (see main()); shows onboarding only on first run.
@@ -24,8 +24,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/',
-        name: HomeScreen.routeName,
-        builder: (context, state) => const HomeScreen(),
+        name: MainShell.routeName,
+        builder: (context, state) => const MainShell(),
       ),
       GoRoute(
         path: '/upload',

@@ -2,10 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../app/copy/trust_copy.dart';
 import '../../../app/theme/app_tokens.dart';
 import '../../../app/theme/reconsnap_theme.dart';
 import '../../../app/widgets/app_components.dart';
 import '../../../core/billing/billing_service.dart';
+import '../../../core/billing/entitlements.dart';
+import '../../../core/models/conversion_job.dart';
+import '../../conversion/presentation/conversion_controller.dart';
+import '../../conversion/presentation/result_summary.dart';
 import 'entitlements_controller.dart';
 
 class PaywallScreen extends ConsumerWidget {
@@ -17,6 +22,10 @@ class PaywallScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final entitlements = ref.watch(entitlementsProvider);
     final controller = ref.read(entitlementsProvider.notifier);
+    // Trigger the paywall *in context*: if there's a finished, reconciled result
+    // waiting, lead with it — pay to take delivery of work you can already see
+    // is good. The strongest, fairest conversion driver.
+    final job = ref.watch(conversionControllerProvider).activeJob;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Upgrade')),
@@ -27,7 +36,7 @@ class PaywallScreen extends ConsumerWidget {
             SoftCard(
               child: Row(
                 children: [
-                  const BrandMark(),
+                  const BrandMark(size: 44),
                   const SizedBox(width: AppSpacing.lg),
                   Expanded(
                     child: Column(
@@ -36,15 +45,14 @@ class PaywallScreen extends ConsumerWidget {
                         Text(
                           entitlements.isPro
                               ? 'You are on Pro'
+                              : job != null && !entitlements.canConvert
+                              ? 'Unlock to export'
                               : 'Get more conversions',
-                          style: Theme.of(context).textTheme.titleMedium
-                              ?.copyWith(fontWeight: FontWeight.w800),
+                          style: Theme.of(context).textTheme.titleMedium,
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          entitlements.isPro
-                              ? 'Unlimited statement conversions.'
-                              : '${entitlements.availableCredits} conversion${entitlements.availableCredits == 1 ? '' : 's'} left. Convert more with a pack or go unlimited.',
+                          _leadCopy(entitlements, job),
                           style: Theme.of(context).textTheme.bodyMedium,
                         ),
                       ],
@@ -92,6 +100,19 @@ class PaywallScreen extends ConsumerWidget {
     );
   }
 
+  String _leadCopy(Entitlements entitlements, ConversionJob? job) {
+    if (entitlements.isPro) return 'Unlimited statement conversions.';
+    if (job != null && !entitlements.canConvert) {
+      return 'Your ${job.bank.name} statement is converted'
+          '${job.fullyReconciled ? ' and reconciled' : ''}. '
+          "You've used all ${Entitlements.freeAllowance} free conversions — "
+          'unlock to export it.';
+    }
+    return '${entitlements.availableCredits} conversion'
+        '${entitlements.availableCredits == 1 ? '' : 's'} left. '
+        'Convert more with a pack or go unlimited.';
+  }
+
   Future<void> _buy(
     BuildContext context,
     EntitlementsController controller,
@@ -114,12 +135,9 @@ class _Benefits extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     const items = [
-      (Icons.shield_outlined, 'Processed on your device — never uploaded'),
-      (
-        Icons.fact_check_outlined,
-        'Balance-validated, low-confidence rows flagged',
-      ),
-      (Icons.grid_on_rounded, 'Export to CSV and Excel'),
+      (Icons.fact_check_outlined, TrustCopy.reconcileGuarantee),
+      (Icons.grid_on_rounded, 'Export to Excel, QuickBooks, Xero, OFX & CSV'),
+      (Icons.shield_outlined, TrustCopy.short),
     ];
     return SoftCard(
       padding: const EdgeInsets.all(AppSpacing.lg),
@@ -166,11 +184,10 @@ class _ProductCard extends StatelessWidget {
         borderRadius: AppRadius.all(AppRadius.lg),
         border: Border.all(
           color: highlight
-              ? ReconSnapColors.accentGreen
+              ? ReconSnapColors.terracotta
               : ReconSnapColors.border,
           width: highlight ? 1.6 : 1,
         ),
-        boxShadow: highlight ? AppShadows.card : null,
       ),
       child: Material(
         color: Colors.transparent,
@@ -195,7 +212,7 @@ class _ProductCard extends StatelessWidget {
                             const SizedBox(width: AppSpacing.sm),
                             const StatusPill(
                               label: 'Best value',
-                              tone: PillTone.success,
+                              tone: PillTone.info,
                             ),
                           ],
                         ],
@@ -205,6 +222,17 @@ class _ProductCard extends StatelessWidget {
                         product.subtitle,
                         style: Theme.of(context).textTheme.bodySmall,
                       ),
+                      if (product.savingsLabel != null) ...[
+                        const SizedBox(height: 6),
+                        Text(
+                          product.savingsLabel!,
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(
+                                color: ReconSnapColors.mossDeep,
+                                fontWeight: FontWeight.w600,
+                              ),
+                        ),
+                      ],
                     ],
                   ),
                 ),
