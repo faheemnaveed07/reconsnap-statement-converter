@@ -101,43 +101,46 @@ void _showSupportedBanks(BuildContext context) {
   showModalBottomSheet<void>(
     context: context,
     showDragHandle: true,
+    isScrollControlled: true,
     builder: (context) => SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Supported banks',
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-            const SizedBox(height: AppSpacing.xs),
-            Text(
-              'More are added as we validate each template. Tell us which to '
-              'add next from Account → Request a bank.',
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
-            const SizedBox(height: AppSpacing.md),
-            for (final bank in launchBanks)
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 6),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        bank.name,
-                        style: Theme.of(context).textTheme.titleSmall,
-                      ),
-                    ),
-                    StatusPill(
-                      label: bank.supportLevel.label,
-                      tone: bank.supportLevel.tone,
-                    ),
-                  ],
-                ),
+      child: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Supported banks',
+                style: Theme.of(context).textTheme.titleLarge,
               ),
-          ],
+              const SizedBox(height: AppSpacing.xs),
+              Text(
+                'More are added as we validate each template. Tell us which to '
+                'add next from Account → Request a bank.',
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+              const SizedBox(height: AppSpacing.md),
+              for (final bank in launchBanks)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 6),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          bank.name,
+                          style: Theme.of(context).textTheme.titleSmall,
+                        ),
+                      ),
+                      StatusPill(
+                        label: bank.supportLevel.label,
+                        tone: bank.supportLevel.tone,
+                      ),
+                    ],
+                  ),
+                ),
+            ],
+          ),
         ),
       ),
     ),

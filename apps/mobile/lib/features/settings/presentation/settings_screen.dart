@@ -149,33 +149,17 @@ void _pickDefaultBank(BuildContext context, WidgetRef ref) {
   showModalBottomSheet<void>(
     context: context,
     showDragHandle: true,
+    isScrollControlled: true,
     builder: (sheetContext) => SafeArea(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          ListTile(
-            leading: const Icon(Icons.do_not_disturb_on_outlined),
-            title: const Text('No default'),
-            subtitle: const Text('Detect the bank from each file.'),
-            trailing: current == null
-                ? const Icon(
-                    Icons.check_rounded,
-                    color: ReconSnapColors.terracotta,
-                  )
-                : null,
-            onTap: () {
-              ref
-                  .read(conversionPreferencesProvider.notifier)
-                  .setDefaultBank(null);
-              Navigator.of(sheetContext).pop();
-            },
-          ),
-          for (final bank in launchBanks)
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
             ListTile(
-              leading: const Icon(Icons.account_balance_rounded),
-              title: Text(bank.name),
-              subtitle: Text(bank.countryCode),
-              trailing: current == bank.id
+              leading: const Icon(Icons.do_not_disturb_on_outlined),
+              title: const Text('No default'),
+              subtitle: const Text('Detect the bank from each file.'),
+              trailing: current == null
                   ? const Icon(
                       Icons.check_rounded,
                       color: ReconSnapColors.terracotta,
@@ -184,14 +168,33 @@ void _pickDefaultBank(BuildContext context, WidgetRef ref) {
               onTap: () {
                 ref
                     .read(conversionPreferencesProvider.notifier)
-                    .setDefaultBank(bank.id);
-                ref
-                    .read(conversionControllerProvider.notifier)
-                    .selectBank(bank);
+                    .setDefaultBank(null);
                 Navigator.of(sheetContext).pop();
               },
             ),
-        ],
+            for (final bank in launchBanks)
+              ListTile(
+                leading: const Icon(Icons.account_balance_rounded),
+                title: Text(bank.name),
+                subtitle: Text(bank.countryCode),
+                trailing: current == bank.id
+                    ? const Icon(
+                        Icons.check_rounded,
+                        color: ReconSnapColors.terracotta,
+                      )
+                    : null,
+                onTap: () {
+                  ref
+                      .read(conversionPreferencesProvider.notifier)
+                      .setDefaultBank(bank.id);
+                  ref
+                      .read(conversionControllerProvider.notifier)
+                      .selectBank(bank);
+                  Navigator.of(sheetContext).pop();
+                },
+              ),
+          ],
+        ),
       ),
     ),
   );
@@ -250,53 +253,56 @@ void _showSupportedBanks(BuildContext context) {
   showModalBottomSheet<void>(
     context: context,
     showDragHandle: true,
+    isScrollControlled: true,
     builder: (_) => SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(
-          AppSpacing.lg,
-          0,
-          AppSpacing.lg,
-          AppSpacing.lg,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: const EdgeInsets.only(
-                left: AppSpacing.sm,
-                bottom: AppSpacing.xs,
-              ),
-              child: Text(
-                'Supported banks',
-                style: Theme.of(
-                  context,
-                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.only(
-                left: AppSpacing.sm,
-                bottom: AppSpacing.md,
-              ),
-              child: Text(
-                'Support starts narrow so every template is validated. More banks '
-                'are added as real statements are tested.',
-                style: Theme.of(context).textTheme.bodySmall,
-              ),
-            ),
-            for (final bank in launchBanks)
-              ListTile(
-                contentPadding: const EdgeInsets.symmetric(horizontal: 8),
-                leading: const Icon(
-                  Icons.account_balance_rounded,
-                  color: ReconSnapColors.ink700,
+      child: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.lg,
+            0,
+            AppSpacing.lg,
+            AppSpacing.lg,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.only(
+                  left: AppSpacing.sm,
+                  bottom: AppSpacing.xs,
                 ),
-                title: Text(bank.name),
-                subtitle: Text(bank.countryCode),
-                trailing: _supportPill(bank.supportLevel),
+                child: Text(
+                  'Supported banks',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
               ),
-          ],
+              Padding(
+                padding: const EdgeInsets.only(
+                  left: AppSpacing.sm,
+                  bottom: AppSpacing.md,
+                ),
+                child: Text(
+                  'Support starts narrow so every template is validated. More banks '
+                  'are added as real statements are tested.',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              ),
+              for (final bank in launchBanks)
+                ListTile(
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 8),
+                  leading: const Icon(
+                    Icons.account_balance_rounded,
+                    color: ReconSnapColors.ink700,
+                  ),
+                  title: Text(bank.name),
+                  subtitle: Text(bank.countryCode),
+                  trailing: _supportPill(bank.supportLevel),
+                ),
+            ],
+          ),
         ),
       ),
     ),
