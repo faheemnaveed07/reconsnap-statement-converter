@@ -80,7 +80,6 @@ class ReconSnapColors {
   static const accentGreenDark = mossDeep;
   static const secondaryContainer = verifiedSurface;
   static const onSecondaryContainer = mossDeep;
-  static const secondaryFixed = moss;
   static const actionBlue = terracotta; // info → terracotta (no blue)
   static const infoSurface = accentSurface;
   static const successSurface = verifiedSurface;
@@ -89,10 +88,6 @@ class ReconSnapColors {
   static const riskRed = brick;
   static const riskSurface = failSurface;
   static const onRiskContainer = brick;
-
-  /// Back-compat for the retired dark hero panel / brand mark. Flat ink — no
-  /// real gradient (kept only so old call-sites resolve until rewritten).
-  static const heroGradient = LinearGradient(colors: [ink, ink]);
 }
 
 class ReconSnapTheme {
